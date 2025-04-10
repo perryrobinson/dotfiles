@@ -2,10 +2,11 @@
 # Install SDKMAN for Java version management
 echo "Installing SDKMAN..."
 if [ ! -d "$HOME/.sdkman" ]; then
-    # Make sure we have required tools
+    # Make sure zip and unzip are installed
     if ! command -v zip &> /dev/null || ! command -v unzip &> /dev/null; then
-        echo "Please install zip and unzip first (they should be in your essentials.txt)"
-        exit 1
+        echo "Installing zip and unzip..."
+        sudo apt-get update
+        sudo apt-get install -y zip unzip
     fi
 
     curl -s "https://get.sdkman.io" | bash
