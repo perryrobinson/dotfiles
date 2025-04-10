@@ -1,0 +1,9 @@
+build-essential
+curl
+wget
+git
+htop
+jq
+unzip
+net-tools
+tree

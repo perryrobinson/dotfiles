@@ -1,0 +1,36 @@
+# Ignore secrets file
+.bash_secrets
+
+# Ignore backup files
+*.bak
+*.backup
+*~
+.*.swp
+.*.swo
+
+# Ignore logs
+*.log
+
+# Ignore temp files
+temp/
+tmp/
+
+# Ignore OS-specific files
+.DS_Store
+Thumbs.db
+.directory
+
+# Ignore any compiled files
+*.pyc
+*.class
+*.o
+*.so
+__pycache__/
+
+# Ignore any local configuration
+.local/
+.idea/
+.vscode/
+
+# Docker test logs or temp files
+test/logs/

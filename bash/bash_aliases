@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+# ~/.bash_aliases: custom aliases
+
+# # Directory navigation
+# alias ll='ls -alF'
+# alias la='ls -A'
+# alias l='ls -CF'
+# alias ..='cd ..'
+# alias ...='cd ../..'
+# alias ....='cd ../../..'
+
+# # System commands
+# alias df='df -h'                          # Human-readable sizes
+# alias free='free -m'                      # Show sizes in MB
+# alias cp='cp -i'                          # Confirm before overwriting
+# alias mv='mv -i'                          # Confirm before overwriting
+# alias mkdir='mkdir -p'                    # Create parent directories as needed
+
+# # Git shortcuts
+# alias gs='git status'
+# alias ga='git add'
+# alias gc='git commit'
+# alias gd='git diff'
+# alias gl='git log'
+# alias gp='git push'
+# alias gpl='git pull'
+
+# # Docker shortcuts
+# alias d='docker'
+# alias dc='docker-compose'
+# alias dcup='docker-compose up -d'
+# alias dcdown='docker-compose down'
+# alias dps='docker ps'
