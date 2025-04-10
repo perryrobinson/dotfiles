@@ -54,3 +54,6 @@ if [ -d "$HOME/.tool_configs" ]; then
         fi
     done
 fi
+#THIS MUST BE AT THE END OF THE FILE FOR SDKMAN TO WORK!!!
+export SDKMAN_DIR="/home/testuser/.sdkman"
+[[ -s "/home/testuser/.sdkman/bin/sdkman-init.sh" ]] && source "/home/testuser/.sdkman/bin/sdkman-init.sh"

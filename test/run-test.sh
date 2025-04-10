@@ -1,6 +1,9 @@
 #!/bin/bash
 # run-test.sh
 
+# Go to the directory where the docker-compose.yml is located
+cd "$(dirname "$0")"
+
 # Build and start the container
 docker-compose up -d --build
 

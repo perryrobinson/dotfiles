@@ -4,6 +4,6 @@ services:
   dotfiles-test:
     build: .
     volumes:
-      - ../:/home/testuser/dotfiles
+      - ..:/home/testuser/dotfiles
     tty: true
     stdin_open: true

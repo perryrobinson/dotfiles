@@ -56,14 +56,121 @@ These dotfiles use a modular approach:
 
 ## Testing Environment
 
-This repo includes Docker-based testing to verify the dotfiles work correctly:
+This repo includes Docker-based testing to verify the dotfiles work correctly.
+
+### Running the Test Environment
+
+Start the test environment:
 
 ```bash
 cd ~/dotfiles/test
+chmod +x run-test.sh
 ./run-test.sh
 ```
 
-This launches a fresh Ubuntu container with the dotfiles mounted, allowing you to test installation and setup without affecting your actual system.
+This launches a fresh Ubuntu container with the dotfiles mounted at `/home/testuser/dotfiles`.
+
+### Testing the Installation
+
+Once inside the container, follow these steps to test your dotfiles:
+
+```bash
+# Make scripts executable (needed because permissions aren't preserved in Docker volumes)
+cd ~/dotfiles
+chmod +x install.sh
+chmod +x tools/*.sh
+
+# Run the installation script
+./install.sh
+
+# Source the new bashrc to apply changes
+source ~/.bashrc
+
+# Verify symlinks were created
+ls -la ~ | grep bash
+# You should see symlinks to your dotfiles repo
+
+# Verify secrets file was created
+cat ~/.bash_secrets
+# You can edit this file to test environment variables
+```
+
+### Testing Development Tools
+
+Test each development environment setup:
+
+```bash
+# Test Java setup with SDKMAN
+./tools/setup_java.sh
+source ~/.bashrc
+sdk version  # Should display SDKMAN version
+
+# Test Python setup with pyenv
+./tools/setup_python.sh
+source ~/.bashrc
+pyenv --version  # Should display pyenv version
+
+# Test Node.js setup with nvm
+./tools/setup_node.sh
+source ~/.bashrc
+nvm --version  # Should display nvm version
+```
+
+### Verifying Tool Configurations
+
+Verify that tool-specific configurations are working:
+
+```bash
+# Check if .tool_configs directory was created
+ls -la ~/.tool_configs
+
+# Check if PATH is set up correctly for each tool
+echo $PATH | grep sdkman
+echo $PATH | grep pyenv
+echo $PATH | grep nvm
+
+# Try installing a specific version of a tool
+sdk install java 17.0.8-tem
+pyenv install 3.10.0
+nvm install 16
+```
+
+### Testing Bash Functions
+
+Test the bash functions to ensure they work correctly:
+
+```bash
+# Test mkcd function
+mkcd test-dir
+pwd  # Should show you're in the new directory
+
+# Test extract function (if you have a test archive)
+extract test-archive.zip
+
+# Test backup function
+echo "test" > testfile
+backup testfile
+ls -la  # Should show a backup file with timestamp
+```
+
+### Exiting the Test Environment
+
+When you're done testing, simply type:
+
+```bash
+exit
+```
+
+This will exit the container and stop it automatically.
+
+### Common Issues and Troubleshooting
+
+- **Permission denied errors**: Use `chmod +x` on scripts
+- **Command not found**: Make sure to `source ~/.bashrc` after installation
+- **Tool installation failures**: Check for missing dependencies in your essentials.txt
+- **Path issues**: Verify the tool configs are being sourced correctly
+
+Use this testing environment to make changes to your dotfiles and immediately see how they work before committing them to your repository.
 
 ## Customization
 

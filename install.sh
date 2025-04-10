@@ -43,8 +43,21 @@ if command -v apt-get &> /dev/null; then
     echo
     if [[ $REPLY =~ ^[Yy]$ ]]; then
         echo "Installing essential packages..."
+
+        # Set timezone to America/Chicago (CST)
+        echo "Setting timezone to America/Chicago..."
+        sudo ln -sf /usr/share/zoneinfo/America/Chicago /etc/localtime
+        echo "America/Chicago" | sudo tee /etc/timezone > /dev/null
+
         sudo apt-get update
-        sudo apt-get install -y build-essential curl wget git htop jq unzip net-tools tree dos2unix
+        
+        # Read packages from essentials.txt file
+        if [ -f "$DOTFILES_DIR/packages/essentials.txt" ]; then
+            xargs sudo apt-get install -y < "$DOTFILES_DIR/packages/essentials.txt"
+        else
+            # Fallback if file doesn't exist
+            sudo apt-get install -y build-essential curl wget git htop jq zip unzip net-tools tree dos2unix
+        fi
         
         # Install Docker if not already installed
         if ! command -v docker &> /dev/null; then
