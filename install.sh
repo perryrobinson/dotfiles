@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 # Dotfiles installation script
-
 DOTFILES_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 BACKUP_DIR="$HOME/.dotfiles_backup_$(date +%Y%m%d%H%M%S)"
 
@@ -37,18 +36,21 @@ for file in "$DOTFILES_DIR/bash/tool_configs/"*.sh; do
     fi
 done
 
+# Source the bashrc to get the environment ready
+source "$HOME/.bashrc"
+
 # Install packages if on Debian/Ubuntu
 if command -v apt-get &> /dev/null; then
     read -p "Do you want to install essential packages? (y/n) " -n 1 -r
     echo
     if [[ $REPLY =~ ^[Yy]$ ]]; then
         echo "Installing essential packages..."
-
+        
         # Set timezone to America/Chicago (CST)
         echo "Setting timezone to America/Chicago..."
         sudo ln -sf /usr/share/zoneinfo/America/Chicago /etc/localtime
         echo "America/Chicago" | sudo tee /etc/timezone > /dev/null
-
+        
         sudo apt-get update
         
         # Read packages from essentials.txt file
@@ -87,11 +89,53 @@ fi
 # Make setup scripts executable
 chmod +x "$DOTFILES_DIR/tools/"*.sh
 
+# Function to install development tools
+install_dev_tools() {
+    # Source the bashrc to ensure environment is up to date
+    source "$HOME/.bashrc"
+    
+    # Install Java with SDKMAN
+    read -p "Do you want to install Java (using SDKMAN)? (y/n) " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        echo "Installing Java..."
+        bash "$DOTFILES_DIR/tools/setup_java.sh"
+        # Need to source again after installing SDKMAN
+        source "$HOME/.bashrc"
+    fi
+    
+    # Install Python with pyenv
+    read -p "Do you want to install Python (using pyenv)? (y/n) " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        echo "Installing Python..."
+        bash "$DOTFILES_DIR/tools/setup_python.sh"
+        # Need to source again after installing pyenv
+        source "$HOME/.bashrc"
+    fi
+    
+    # Install Node.js with nvm
+    read -p "Do you want to install Node.js (using nvm)? (y/n) " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        echo "Installing Node.js..."
+        bash "$DOTFILES_DIR/tools/setup_node.sh"
+        # Need to source again after installing nvm
+        source "$HOME/.bashrc"
+    fi
+}
+
+# Ask if the user wants to install development tools
+read -p "Do you want to set up development tools now? (y/n) " -n 1 -r
+echo
+if [[ $REPLY =~ ^[Yy]$ ]]; then
+    install_dev_tools
+else
+    echo "You can set up development tools later by running:"
+    echo "  ./tools/setup_java.sh    - Install SDKMAN for Java"
+    echo "  ./tools/setup_python.sh  - Install pyenv for Python"
+    echo "  ./tools/setup_node.sh    - Install nvm for Node.js"
+fi
+
 echo "Dotfiles installation complete!"
-echo
-echo "To set up development tools, run:"
-echo "  ./tools/setup_java.sh    - Install SDKMAN for Java"
-echo "  ./tools/setup_python.sh  - Install pyenv for Python"
-echo "  ./tools/setup_node.sh    - Install nvm for Node.js"
-echo
-echo "Please log out and log back in to apply all changes, or run 'source ~/.bashrc'"
+echo "Please log out and log back in to ensure all changes are applied."

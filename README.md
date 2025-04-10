@@ -104,16 +104,20 @@ Test each development environment setup:
 ./tools/setup_java.sh
 source ~/.bashrc
 sdk version  # Should display SDKMAN version
+java --version
 
 # Test Python setup with pyenv
 ./tools/setup_python.sh
 source ~/.bashrc
 pyenv --version  # Should display pyenv version
+python --version
 
 # Test Node.js setup with nvm
 ./tools/setup_node.sh
 source ~/.bashrc
 nvm --version  # Should display nvm version
+npm --version
+node --version
 ```
 
 ### Verifying Tool Configurations
