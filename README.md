@@ -166,7 +166,7 @@ When you're done testing, simply type:
 exit
 ```
 
-This will exit the container and stop it automatically.
+This will exit the container, stop it automatically, and remove all images/volumes/orphans.
 
 ### Common Issues and Troubleshooting
 

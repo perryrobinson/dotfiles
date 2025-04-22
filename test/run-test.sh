@@ -5,10 +5,10 @@
 cd "$(dirname "$0")"
 
 # Build and start the container
-docker-compose up -d --build
+docker compose up -d --build
 
 # Connect to the container
-docker-compose exec dotfiles-test bash
+docker compose exec dotfiles-test bash
 
-# When exiting the container, stop it
-docker-compose down
+# When exiting the container, stop it, remove containers, networks, ALL images, orphans, AND named volumes
+docker compose down --rmi all --volumes --remove-orphans
