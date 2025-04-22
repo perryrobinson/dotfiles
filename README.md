@@ -21,9 +21,9 @@ chmod +x install.sh
   - `.bash_secrets`: Template for environment variables and API keys
 
 - **Development Tools**: Setup scripts for popular development environments:
-  - Java: Uses SDKMAN for version management
-  - Python: Uses pyenv for version management
-  - Node.js: Uses nvm for version management
+  - Java: Uses SDKMAN for version management TODO add maven and have it configured properly with sdkman.
+  - Python: Uses pyenv for version management. TODO add poetry or uv. Also look at replacing pyenv/poetry with uv.
+  - Node.js: Uses nvm for version management. Also installs yarn.
 
 - **Docker Support**: Optional installation of Docker and Docker Compose
 
@@ -117,6 +117,7 @@ python --version
 source ~/.bashrc
 nvm --version  # Should display nvm version
 npm --version
+yarn --version
 node --version
 ```
 
