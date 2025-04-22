@@ -222,3 +222,57 @@ git pull
 ```
 
 This will update your configuration while preserving your personal settings in `.bash_secrets`.
+
+## Next Steps
+
+### Python - replacing pyenv and poetry with uv
+
+uv has the potential to replace both pyenv and poetry, worth exploring it. but uv must be installed as the standalone tool instead of just as a python dependency
+
+Install uv as the standalone tool
+
+```bash
+# download the uv standalone
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# add this to your .bash_paths
+# uv
+export PATH="$HOME/.cargo/bin:$PATH"
+```
+
+Using uv for Python version management (replacing pyenv)
+Now you can use uv to manage Python versions:
+
+```bash
+# Install a specific Python version
+uv python install 3.12
+
+# Pin global python verison
+uv python pin --global <version>
+
+# Use a specific Python version
+uv python use 3.12
+
+# Pin repository level python version
+uv python pin <version>
+
+# Create a virtual environment with a specific Python version
+uv venv --python 3.12
+```
+
+Using uv for dependency management (replacing poetry)
+For dependency management similar to poetry:
+
+```bash
+# Initialize a new project (creates pyproject.toml)
+uv init
+
+# Add dependencies
+uv pip add numpy pandas
+
+# Add dev dependencies
+uv pip add --dev pytest black
+
+# Install all dependencies from pyproject.toml
+uv pip sync
+```
