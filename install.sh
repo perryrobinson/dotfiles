@@ -14,11 +14,34 @@ for file in .bashrc .bash_aliases .bash_functions .bash_paths .bash_secrets; do
     fi
 done
 
-# Link configuration files
-ln -sf "$DOTFILES_DIR/bash/bashrc" "$HOME/.bashrc"
-ln -sf "$DOTFILES_DIR/bash/bash_aliases" "$HOME/.bash_aliases"
-ln -sf "$DOTFILES_DIR/bash/bash_functions" "$HOME/.bash_functions"
-ln -sf "$DOTFILES_DIR/bash/bash_paths" "$HOME/.bash_paths"
+# Ask user for installation method
+echo "Do you want to use symlinks? (y/n)"
+echo "  y) Symlinks (recommended for git tracking - changes in home directory will affect repository)"
+echo "  n) Copies (recommended for local-only changes - changes in home directory won't affect repository)"
+read -n 1 -r install_method
+echo
+if [[ $install_method =~ ^[Yy]$ ]]; then
+    install_method="symlink"
+else
+    install_method="copy"
+fi
+
+# Function to install files
+install_files() {
+    local src="$1"
+    local dest="$2"
+    if [ "$install_method" = "symlink" ]; then
+        ln -sf "$src" "$dest"
+    else
+        cp "$src" "$dest"
+    fi
+}
+
+# Install configuration files
+install_files "$DOTFILES_DIR/bash/bashrc" "$HOME/.bashrc"
+install_files "$DOTFILES_DIR/bash/bash_aliases" "$HOME/.bash_aliases"
+install_files "$DOTFILES_DIR/bash/bash_functions" "$HOME/.bash_functions"
+install_files "$DOTFILES_DIR/bash/bash_paths" "$HOME/.bash_paths"
 
 # Create secrets file from template if it doesn't exist
 if [ ! -f "$HOME/.bash_secrets" ]; then
@@ -27,12 +50,12 @@ if [ ! -f "$HOME/.bash_secrets" ]; then
     echo "Please edit ~/.bash_secrets to add your actual credentials"
 fi
 
-# Create tool configs directory and link files
+# Create tool configs directory and install files
 mkdir -p "$HOME/.tool_configs"
 for file in "$DOTFILES_DIR/bash/tool_configs/"*.sh; do
     if [ -f "$file" ]; then
         filename=$(basename "$file")
-        ln -sf "$file" "$HOME/.tool_configs/$filename"
+        install_files "$file" "$HOME/.tool_configs/$filename"
     fi
 done
 
@@ -138,4 +161,10 @@ else
 fi
 
 echo "Dotfiles installation complete!"
+if [ "$install_method" = "symlink" ]; then
+    echo "Using symlinks - changes in your home directory will affect the repository"
+else
+    echo "Using copies - changes in your home directory won't affect the repository"
+fi
+echo "Your old configuration files have been backed up to $BACKUP_DIR"
 echo "Please log out and log back in to ensure all changes are applied."
