@@ -33,7 +33,6 @@ During installation, you'll be prompted to choose between two installation metho
   - `.bash_functions`: Useful shell functions
   - `.bash_paths`: PATH management
   - `.bash_secrets`: Template for environment variables and API keys
-  - `.bash_theme`: Dracula theme configuration
 
 - **Development Tools**: Setup scripts for popular development environments:
   - Java: Uses SDKMAN for version management TODO add maven and have it configured properly with sdkman.
@@ -41,12 +40,6 @@ During installation, you'll be prompted to choose between two installation metho
   - Node.js: Uses nvm for version management. Also installs yarn.
 
 - **Docker Support**: Optional installation of Docker and Docker Compose
-
-- **Theme Support**: Dracula theme for terminal customization:
-  - Colorful prompt with Dracula colors
-  - Custom dircolors for file listings
-  - Man page and grep colors
-  - Terminal title support
 
 ## Setting Up Development Tools
 
@@ -64,10 +57,6 @@ source ~/.bashrc
 # For Node.js development with nvm
 ./tools/setup_node.sh
 source ~/.bashrc
-
-# For theme setup
-./tools/setup_theme.sh
-source ~/.bashrc
 ```
 
 ## How It Works
@@ -78,7 +67,6 @@ These dotfiles use a modular approach:
 2. **Tool Configs**: Tool-specific configurations are stored in `bash/tool_configs/` and installed to `~/.tool_configs/`
 3. **Setup Scripts**: One-time installation scripts in the `tools/` directory help set up development environments
 4. **Secrets**: Sensitive information is stored in `~/.bash_secrets` (not tracked in git)
-5. **Theme**: Dracula theme configuration is stored in `~/.bash_theme` and sourced by the shell configuration
 
 ## Testing Environment
 
@@ -119,10 +107,6 @@ ls -la ~ | grep bash
 # Verify secrets file was created
 cat ~/.bash_secrets
 # You can edit this file to test environment variables
-
-# Verify theme is working
-ls -la  # Should show colored output
-echo $PS1  # Should show colored prompt
 ```
 
 ### Testing Development Tools
@@ -149,12 +133,6 @@ nvm --version  # Should display nvm version
 npm --version
 yarn --version
 node --version
-
-# Test theme setup
-./tools/setup_theme.sh
-source ~/.bashrc
-ls -la  # Should show colored output
-echo $PS1  # Should show colored prompt
 ```
 
 ### Verifying Tool Configurations
@@ -210,7 +188,6 @@ This will exit the container, stop it automatically, and remove all images/volum
 - **Command not found**: Make sure to `source ~/.bashrc` after installation
 - **Tool installation failures**: Check for missing dependencies in your essentials.txt
 - **Path issues**: Verify the tool configs are being sourced correctly
-- **Theme issues**: Make sure dircolors is installed and the theme file is executable
 
 Use this testing environment to make changes to your dotfiles and immediately see how they work before committing them to your repository.
 
@@ -220,7 +197,6 @@ Use this testing environment to make changes to your dotfiles and immediately se
 - Add custom functions to `.bash_functions`
 - Modify PATH settings in `.bash_paths`
 - Store secrets and API keys in `.bash_secrets`
-- Customize the theme by editing `.bash_theme`
 
 ## Structure
 
@@ -232,7 +208,6 @@ dotfiles/
 │   ├── bash_functions      # Custom shell functions
 │   ├── bash_paths          # PATH management
 │   ├── bash_secrets.template  # Template for secrets
-│   ├── bash_theme          # Dracula theme configuration
 │   └── tool_configs/       # Tool-specific configurations
 │       ├── java.sh         # SDKMAN configuration
 │       ├── python.sh       # pyenv configuration
@@ -240,8 +215,7 @@ dotfiles/
 ├── tools/                  # Setup scripts for development tools
 │   ├── setup_java.sh       # Installs SDKMAN and Java
 │   ├── setup_python.sh     # Installs pyenv and Python
-│   ├── setup_node.sh       # Installs nvm and Node.js
-│   └── setup_theme.sh      # Installs Dracula theme
+│   └── setup_node.sh       # Installs nvm and Node.js
 ├── test/                   # Docker-based testing environment
 │   ├── Dockerfile          # Test container definition
 │   ├── docker-compose.yml  # Container orchestration
