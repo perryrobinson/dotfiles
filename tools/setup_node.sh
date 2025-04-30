@@ -2,6 +2,7 @@
 # Install nvm for Node.js version management
 echo "Installing nvm..."
 if [ ! -d "$HOME/.nvm" ]; then
+    # TODO: This should be installing the latest nvm not v0.39.5
     curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.5/install.sh | bash
    
     # Load nvm
