@@ -146,19 +146,28 @@ install_dev_tools() {
         # Need to source again after installing nvm
         source "$HOME/.bashrc"
     fi
+
+    # Install Neovim with LazyVim
+    read -p "Do you want to install Neovim with LazyVim? (y/n) " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        echo "Installing Neovim with LazyVim..."
+        bash "$DOTFILES_DIR/tools/setup_nvim.sh"
+    fi
 }
 
-# Ask if the user wants to install development tools
-read -p "Do you want to set up development tools now? (y/n) " -n 1 -r
-echo
-if [[ $REPLY =~ ^[Yy]$ ]]; then
-    install_dev_tools
-else
-    echo "You can set up development tools later by running:"
-    echo "  ./tools/setup_java.sh    - Install SDKMAN for Java"
-    echo "  ./tools/setup_python.sh  - Install pyenv for Python"
-    echo "  ./tools/setup_node.sh    - Install nvm for Node.js"
-fi
+    # Ask if the user wants to install development tools
+    read -p "Do you want to set up development tools now? (y/n) " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        install_dev_tools
+    else
+        echo "You can set up development tools later by running:"
+        echo "  ./tools/setup_java.sh    - Install SDKMAN for Java"
+        echo "  ./tools/setup_python.sh  - Install pyenv for Python"
+        echo "  ./tools/setup_node.sh    - Install nvm for Node.js"
+        echo "  ./tools/setup_nvim.sh    - Install Neovim with LazyVim"
+    fi
 
 echo "Dotfiles installation complete!"
 if [ "$install_method" = "symlink" ]; then

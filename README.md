@@ -291,3 +291,7 @@ uv pip add --dev pytest black
 # Install all dependencies from pyproject.toml
 uv pip sync
 ```
+
+### Neovim
+
+https://dotfyle.com/neovim/configurations/top
