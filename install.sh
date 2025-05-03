@@ -101,6 +101,7 @@ if command -v apt-get &> /dev/null; then
             read -p "Do you want to install Docker Compose? (y/n) " -n 1 -r
             echo
             if [[ $REPLY =~ ^[Yy]$ ]]; then
+            # TODO: Don't pin docker-compose version
                 echo "Installing Docker Compose..."
                 sudo curl -L "https://github.com/docker/compose/releases/download/v2.20.3/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
                 sudo chmod +x /usr/local/bin/docker-compose

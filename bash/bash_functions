@@ -37,3 +37,20 @@ backup() {
 d2u() {
     find . -type f -print0 | xargs -0 dos2unix
 }
+
+# nvm auto use if .nvmrc is present
+nvm_auto_use() {
+  if [ -f .nvmrc ]; then
+    local nvmrc_node_version current_node_version
+    nvmrc_node_version=$(cat .nvmrc | tr -d 'v')
+    current_node_version=$(node --version 2>/dev/null | tr -d 'v')
+    if [[ "$current_node_version" != "$nvmrc_node_version" ]]; then
+      # Use --silent flag and redirect all output to /dev/null to suppress messages
+      nvm use --silent >/dev/null 2>&1
+    fi
+  fi
+}
+
+if [[ "$PROMPT_COMMAND" != *nvm_auto_use* ]]; then
+  PROMPT_COMMAND="nvm_auto_use;$PROMPT_COMMAND"
+fi
