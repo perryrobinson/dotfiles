@@ -35,3 +35,16 @@ else
     eval "$(pyenv init --path 2>/dev/null || true)"
     eval "$(pyenv init - 2>/dev/null || true)"
 fi
+
+echo "Setting up pipx..."
+if ! command -v pipx &> /dev/null; then
+    echo "Installing pipx..."
+    pip install --user pipx
+    pipx ensurepath
+    
+    export PATH="$HOME/.local/bin:$PATH"
+    
+    echo "pipx installed successfully"
+else
+    echo "pipx is already installed"
+fi
