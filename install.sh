@@ -148,6 +148,16 @@ install_dev_tools() {
         source "$HOME/.bashrc"
     fi
 
+    # Install Go
+    read -p "Do you want to install Go? (y/n) " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        echo "Installing Go..."
+        bash "$DOTFILES_DIR/tools/setup_golang.sh"
+        # Need to source again after Go installation (PATH changes)
+        source "$HOME/.bashrc"
+    fi
+
     # Install Neovim with LazyVim
     read -p "Do you want to install Neovim with LazyVim? (y/n) " -n 1 -r
     echo
@@ -167,6 +177,7 @@ install_dev_tools() {
         echo "  ./tools/setup_java.sh    - Install SDKMAN for Java"
         echo "  ./tools/setup_python.sh  - Install pyenv for Python"
         echo "  ./tools/setup_node.sh    - Install nvm for Node.js"
+        echo "  ./tools/setup_golang.sh  - Install Go"
         echo "  ./tools/setup_nvim.sh    - Install Neovim with LazyVim"
     fi
 
