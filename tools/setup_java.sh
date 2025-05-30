@@ -19,14 +19,28 @@ if [ ! -d "$HOME/.sdkman" ]; then
     echo "Installing Java..."
     sdk install java
    
-    # Uncomment to install other tools
-    # sdk install maven
+    # Install Maven
+    echo "Installing Maven..."
+    sdk install maven
+   
+    # Optionally install Gradle
     # sdk install gradle
    
     echo "Java setup complete"
+    echo "Installed versions:"
+    sdk current java
+    sdk current maven
 else
     echo "SDKMAN is already installed"
     # Source SDKMAN to ensure commands work
     export SDKMAN_DIR="$HOME/.sdkman"
     [[ -s "$HOME/.sdkman/bin/sdkman-init.sh" ]] && source "$HOME/.sdkman/bin/sdkman-init.sh"
+    
+    # Check if Maven is installed, if not install it
+    if ! sdk current maven &> /dev/null; then
+        echo "Maven not found, installing..."
+        sdk install maven
+    else
+        echo "Maven is already installed: $(sdk current maven)"
+    fi
 fi
