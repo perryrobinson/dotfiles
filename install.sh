@@ -165,6 +165,14 @@ install_dev_tools() {
         echo "Installing Neovim with LazyVim..."
         bash "$DOTFILES_DIR/tools/setup_nvim.sh"
     fi
+
+    # Setup Git configuration
+    read -p "Do you want to set up Git configuration and SSH keys? (y/n) " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        echo "Setting up Git..."
+        bash "$DOTFILES_DIR/tools/setup_git.sh"
+    fi
 }
 
     # Ask if the user wants to install development tools
@@ -179,6 +187,7 @@ install_dev_tools() {
         echo "  ./tools/setup_node.sh    - Install nvm for Node.js"
         echo "  ./tools/setup_golang.sh  - Install Go"
         echo "  ./tools/setup_nvim.sh    - Install Neovim with LazyVim"
+        echo "  ./tools/setup_git.sh     - Configure Git and SSH keys"
     fi
 
 echo "Dotfiles installation complete!"
