@@ -30,13 +30,6 @@ if command -v npm &> /dev/null; then
     [ -f ~/.npm_completion ] && source ~/.npm_completion
 fi
 
-# yarn completion (if yarn is available)
-if command -v yarn &> /dev/null && yarn --version &>/dev/null; then
-    if [ ! -f ~/.yarn_completion ]; then
-        yarn completions bash > ~/.yarn_completion 2>/dev/null || true
-    fi
-    [ -f ~/.yarn_completion ] && source ~/.yarn_completion
-fi
 
 # kubectl completion (if kubectl is installed)
 if command -v kubectl &> /dev/null; then
