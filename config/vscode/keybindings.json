@@ -43,4 +43,9 @@
         "key": "shift shift",
         "command": "workbench.action.quickOpen"
     },
+    {
+        "key": "ctrl+k",
+        "command": "workbench.action.terminal.clear",
+        "when": "terminalFocusInAny"
+    }
 ]
