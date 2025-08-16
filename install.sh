@@ -158,6 +158,16 @@ install_dev_tools() {
         source "$HOME/.bashrc"
     fi
 
+    # Install PHP with Composer and Laravel
+    read -p "Do you want to install PHP (with Composer and Laravel)? (y/n) " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        echo "Installing PHP..."
+        bash "$DOTFILES_DIR/tools/setup_php.sh"
+        # Need to source again after installing Composer global packages
+        source "$HOME/.bashrc"
+    fi
+
     # Install Neovim with LazyVim
     read -p "Do you want to install Neovim with LazyVim? (y/n) " -n 1 -r
     echo
@@ -186,6 +196,7 @@ install_dev_tools() {
         echo "  ./tools/setup_python.sh  - Install pyenv for Python"
         echo "  ./tools/setup_node.sh    - Install nvm for Node.js"
         echo "  ./tools/setup_golang.sh  - Install Go"
+        echo "  ./tools/setup_php.sh     - Install PHP with Composer and Laravel"
         echo "  ./tools/setup_nvim.sh    - Install Neovim with LazyVim"
         echo "  ./tools/setup_git.sh     - Configure Git and SSH keys"
     fi
