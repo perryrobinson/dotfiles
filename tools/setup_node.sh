@@ -85,4 +85,13 @@ else
     fi
 fi
 
+# Install Bun
+echo "Installing Bun..."
+if [ ! -d "$HOME/.bun" ]; then
+    curl -fsSL https://bun.com/install | bash
+    echo "Bun installed successfully"
+else
+    echo "Bun is already installed"
+fi
+
 echo "Node.js tools setup complete!"
