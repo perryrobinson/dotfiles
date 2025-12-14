@@ -7,12 +7,18 @@ BACKUP_DIR="$HOME/.dotfiles_backup_$(date +%Y%m%d%H%M%S)"
 mkdir -p "$BACKUP_DIR"
 
 # Backup existing files
-for file in .bashrc .bash_aliases .bash_functions .bash_paths .bash_secrets; do
+for file in .bashrc .bash_aliases .bash_functions .bash_paths; do
     if [ -f "$HOME/$file" ] || [ -L "$HOME/$file" ]; then
         echo "Backing up $HOME/$file"
         mv "$HOME/$file" "$BACKUP_DIR/"
     fi
 done
+
+# Backup .bash_secrets but keep it in place (copy instead of move)
+if [ -f "$HOME/.bash_secrets" ] || [ -L "$HOME/.bash_secrets" ]; then
+    echo "Backing up $HOME/.bash_secrets (keeping original in place)"
+    cp "$HOME/.bash_secrets" "$BACKUP_DIR/"
+fi
 
 # Ask user for installation method
 echo "Do you want to use symlinks? (y/n)"
