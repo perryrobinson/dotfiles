@@ -1,10 +1,20 @@
 #!/usr/bin/env bash
-# Node.js configuration with nvm
+# Node.js ecosystem configuration
 
+# =============================================================================
+# NVM (Node Version Manager)
+# Manages Node.js versions - also provides npm and npx
+# =============================================================================
 export NVM_DIR="$HOME/.nvm"
 if [ -s "$NVM_DIR/nvm.sh" ]; then
-    source "$NVM_DIR/nvm.sh"  # This loads nvm
-    source "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+    source "$NVM_DIR/nvm.sh"
+    source "$NVM_DIR/bash_completion"
 fi
 
-export PATH="$HOME/.bun/bin:$HOME/.yarn/bin:$HOME/.config/yarn/global/node_modules/.bin:$PATH"
+# =============================================================================
+# Yarn (standalone install at ~/.yarn)
+# =============================================================================
+[ -d "$HOME/.yarn/bin" ] && export PATH="$HOME/.yarn/bin:$PATH"
+
+# Yarn global packages
+[ -d "$HOME/.config/yarn/global/node_modules/.bin" ] && export PATH="$HOME/.config/yarn/global/node_modules/.bin:$PATH"

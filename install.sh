@@ -7,7 +7,7 @@ BACKUP_DIR="$HOME/.dotfiles_backup_$(date +%Y%m%d%H%M%S)"
 mkdir -p "$BACKUP_DIR"
 
 # Backup existing files
-for file in .bashrc .bash_aliases .bash_functions .bash_paths; do
+for file in .bashrc .bash_aliases .bash_functions .bash_paths .bash_logger; do
     if [ -f "$HOME/$file" ] || [ -L "$HOME/$file" ]; then
         echo "Backing up $HOME/$file"
         mv "$HOME/$file" "$BACKUP_DIR/"
@@ -48,6 +48,7 @@ install_files "$DOTFILES_DIR/bash/bashrc" "$HOME/.bashrc"
 install_files "$DOTFILES_DIR/bash/bash_aliases" "$HOME/.bash_aliases"
 install_files "$DOTFILES_DIR/bash/bash_functions" "$HOME/.bash_functions"
 install_files "$DOTFILES_DIR/bash/bash_paths" "$HOME/.bash_paths"
+install_files "$DOTFILES_DIR/bash/bash_logger" "$HOME/.bash_logger"
 
 # Create secrets file from template if it doesn't exist
 if [ ! -f "$HOME/.bash_secrets" ]; then
@@ -123,7 +124,15 @@ chmod +x "$DOTFILES_DIR/tools/"*.sh
 install_dev_tools() {
     # Source the bashrc to ensure environment is up to date
     source "$HOME/.bashrc"
-    
+
+    # Setup Git configuration (first, as other tools may need git)
+    read -p "Do you want to set up Git configuration and SSH keys? (y/n) " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        echo "Setting up Git..."
+        bash "$DOTFILES_DIR/tools/setup_git.sh"
+    fi
+
     # Install Java with SDKMAN
     read -p "Do you want to install Java (using SDKMAN)? (y/n) " -n 1 -r
     echo
@@ -134,13 +143,13 @@ install_dev_tools() {
         source "$HOME/.bashrc"
     fi
     
-    # Install Python with pyenv
-    read -p "Do you want to install Python (using pyenv)? (y/n) " -n 1 -r
+    # Install Python with uv
+    read -p "Do you want to install Python (using uv)? (y/n) " -n 1 -r
     echo
     if [[ $REPLY =~ ^[Yy]$ ]]; then
         echo "Installing Python..."
         bash "$DOTFILES_DIR/tools/setup_python.sh"
-        # Need to source again after installing pyenv
+        # Need to source again after installing uv
         source "$HOME/.bashrc"
     fi
     
@@ -164,13 +173,12 @@ install_dev_tools() {
         source "$HOME/.bashrc"
     fi
 
-    # Install PHP with Composer and Laravel
-    read -p "Do you want to install PHP (with Composer and Laravel)? (y/n) " -n 1 -r
+    # Install Bun
+    read -p "Do you want to install Bun (JavaScript runtime)? (y/n) " -n 1 -r
     echo
     if [[ $REPLY =~ ^[Yy]$ ]]; then
-        echo "Installing PHP..."
-        bash "$DOTFILES_DIR/tools/setup_php.sh"
-        # Need to source again after installing Composer global packages
+        echo "Installing Bun..."
+        bash "$DOTFILES_DIR/tools/setup_bun.sh"
         source "$HOME/.bashrc"
     fi
 
@@ -180,14 +188,6 @@ install_dev_tools() {
     if [[ $REPLY =~ ^[Yy]$ ]]; then
         echo "Installing Neovim with LazyVim..."
         bash "$DOTFILES_DIR/tools/setup_nvim.sh"
-    fi
-
-    # Setup Git configuration
-    read -p "Do you want to set up Git configuration and SSH keys? (y/n) " -n 1 -r
-    echo
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
-        echo "Setting up Git..."
-        bash "$DOTFILES_DIR/tools/setup_git.sh"
     fi
 }
 
@@ -199,10 +199,10 @@ install_dev_tools() {
     else
         echo "You can set up development tools later by running:"
         echo "  ./tools/setup_java.sh    - Install SDKMAN for Java"
-        echo "  ./tools/setup_python.sh  - Install pyenv for Python"
+        echo "  ./tools/setup_python.sh  - Install uv for Python"
         echo "  ./tools/setup_node.sh    - Install nvm for Node.js"
         echo "  ./tools/setup_golang.sh  - Install Go"
-        echo "  ./tools/setup_php.sh     - Install PHP with Composer and Laravel"
+        echo "  ./tools/setup_bun.sh     - Install Bun (JavaScript runtime)"
         echo "  ./tools/setup_nvim.sh    - Install Neovim with LazyVim"
         echo "  ./tools/setup_git.sh     - Configure Git and SSH keys"
     fi

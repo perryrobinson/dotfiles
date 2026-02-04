@@ -5,6 +5,7 @@ boto3typed.boto3-ide
 bradlc.vscode-tailwindcss
 docker.docker
 golang.go
+jdinhlife.gruvbox
 koenigstag.git-changelists
 lkqm.gitblame-annotations
 mechatroner.rainbow-csv
@@ -16,7 +17,6 @@ ms-python.python
 peakchen90.open-html-in-browser
 redhat.java
 rogalmic.bash-debug
-sainnhe.gruvbox-material
 visualstudioexptteam.intellicode-api-usage-examples
 visualstudioexptteam.vscodeintellicode
 vscjava.vscode-gradle

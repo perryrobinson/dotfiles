@@ -17,6 +17,9 @@ RUN apt-get update && apt-get install -y \
 RUN useradd -m -s /bin/bash testuser && \
     echo "testuser ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/testuser
 
+# Copy dotfiles into the container
+COPY --chown=testuser:testuser . /home/testuser/dotfiles
+
 # Switch to the test user
 USER testuser
 WORKDIR /home/testuser

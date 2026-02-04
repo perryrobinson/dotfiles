@@ -1,0 +1,182 @@
+#!/usr/bin/env bash
+# bash_logger - Bash logging library with consistent styling
+#
+# Source this in your scripts:
+#   source ~/.bash_logger
+#
+# Configuration (set before sourcing or export in environment):
+#   LOG_TIMESTAMPS=0    - Disable timestamps (on by default)
+#   LOG_LEVEL=debug     - Minimum level to display (debug|info|warn|error)
+#   NO_COLOR=1          - Disable colors (auto-detected for pipes/files)
+#
+# File logging is handled by the caller, not this library:
+#   ./script.sh 2>&1 | tee -a script.log
+#   ./script.sh >> script.log 2>&1
+
+# Prevent double-sourcing
+[[ -n "${_LOGGER_LOADED:-}" ]] && return 0
+readonly _LOGGER_LOADED=1
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Configuration
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Log level hierarchy (lower number = more verbose)
+declare -A _LOG_LEVELS=([debug]=0 [info]=1 [warn]=2 [error]=3)
+: "${LOG_LEVEL:=info}"
+
+# Timestamps on by default (set LOG_TIMESTAMPS=0 to disable)
+: "${LOG_TIMESTAMPS:=1}"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Color Detection
+# ─────────────────────────────────────────────────────────────────────────────
+
+_logger_use_color() {
+    # Respect NO_COLOR standard (https://no-color.org)
+    [[ -n "${NO_COLOR:-}" ]] && return 1
+    # Check if stdout is a terminal
+    [[ -t 1 ]] || return 1
+    # Check for dumb terminal
+    [[ "${TERM:-dumb}" == "dumb" ]] && return 1
+    return 0
+}
+
+if _logger_use_color; then
+    readonly _C_RESET='\033[0m'
+    readonly _C_BOLD='\033[1m'
+    readonly _C_DIM='\033[2m'
+    readonly _C_RED='\033[0;31m'
+    readonly _C_GREEN='\033[0;32m'
+    readonly _C_YELLOW='\033[0;33m'
+    readonly _C_BLUE='\033[0;34m'
+    readonly _C_CYAN='\033[0;36m'
+    readonly _C_GRAY='\033[0;90m'
+    readonly _C_BOLD_BLUE='\033[1;34m'
+    readonly _C_BOLD_YELLOW='\033[1;33m'
+    readonly _C_BOLD_RED='\033[1;31m'
+else
+    readonly _C_RESET='' _C_BOLD='' _C_DIM=''
+    readonly _C_RED='' _C_GREEN='' _C_YELLOW='' _C_BLUE='' _C_CYAN='' _C_GRAY=''
+    readonly _C_BOLD_BLUE='' _C_BOLD_YELLOW='' _C_BOLD_RED=''
+fi
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Symbols
+# ─────────────────────────────────────────────────────────────────────────────
+
+if [[ "${LANG:-}" == *UTF-8* ]] || [[ "${LC_ALL:-}" == *UTF-8* ]]; then
+    readonly _S_CHECK="✓" _S_CROSS="✗" _S_WARN="⚠" _S_INFO="ℹ" _S_ARROW="▶"
+    readonly _S_BRANCH="├─" _S_BRANCH_END="└─" _S_LINE="│"
+else
+    readonly _S_CHECK="+" _S_CROSS="x" _S_WARN="!" _S_INFO="i" _S_ARROW=">"
+    readonly _S_BRANCH="|-" _S_BRANCH_END="\`-" _S_LINE="|"
+fi
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Internal Helpers
+# ─────────────────────────────────────────────────────────────────────────────
+
+_log_timestamp() {
+    [[ "$LOG_TIMESTAMPS" == "1" ]] && printf "[%s] " "$(date '+%Y-%m-%d %H:%M:%S')"
+}
+
+_log_should_print() {
+    local msg_level="$1"
+    local current_level="${_LOG_LEVELS[${LOG_LEVEL,,}]:-1}"
+    local msg_level_num="${_LOG_LEVELS[$msg_level]:-1}"
+    (( msg_level_num >= current_level ))
+}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Core Logging Functions
+# ─────────────────────────────────────────────────────────────────────────────
+
+log_header() {
+    echo ""
+    echo -e "${_C_BOLD_BLUE}==>${_C_RESET} ${_C_BOLD}$(_log_timestamp)${1}${_C_RESET}"
+}
+
+log_section() {
+    echo ""
+    echo -e "${_C_CYAN}${_C_BOLD}── $(_log_timestamp)${1} ──${_C_RESET}"
+}
+
+log_debug() {
+    _log_should_print debug || return 0
+    echo -e "${_C_DIM}${_S_LINE} $(_log_timestamp)[DEBUG] ${1}${_C_RESET}"
+}
+
+log_info() {
+    _log_should_print info || return 0
+    echo -e "${_C_CYAN}${_S_LINE} ${_S_INFO}  $(_log_timestamp)${1}${_C_RESET}"
+}
+
+log_success() {
+    _log_should_print info || return 0
+    echo -e "${_C_GREEN}${_S_LINE} ${_S_CHECK}  $(_log_timestamp)${1}${_C_RESET}"
+}
+
+log_warn() {
+    _log_should_print warn || return 0
+    echo -e "${_C_YELLOW}${_S_LINE} ${_S_WARN}  $(_log_timestamp)${1}${_C_RESET}"
+}
+
+log_error() {
+    _log_should_print error || return 0
+    echo -e "${_C_BOLD_RED}${_S_LINE} ${_S_CROSS}  $(_log_timestamp)${1}${_C_RESET}" >&2
+}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Structure & Formatting
+# ─────────────────────────────────────────────────────────────────────────────
+
+log_step() {
+    local num="$1" text="$2"
+    echo -e "${_C_BOLD_YELLOW}${_S_LINE}${_C_RESET}"
+    echo -e "${_C_BOLD_YELLOW}${_S_LINE} ${_C_BOLD}[${num}]${_C_RESET} $(_log_timestamp)${text}"
+}
+
+log_detail() {
+    echo -e "${_C_GRAY}${_S_LINE}   ${_S_BRANCH} ${1}${_C_RESET}"
+}
+
+log_detail_last() {
+    echo -e "${_C_GRAY}${_S_LINE}   ${_S_BRANCH_END} ${1}${_C_RESET}"
+}
+
+log_kv() {
+    printf "${_C_GRAY}${_S_LINE}   ${_C_DIM}%-18s${_C_RESET} %s\n" "$1:" "$2"
+}
+
+log_cmd() {
+    echo -e "${_C_GRAY}${_S_LINE}   \$ ${_C_DIM}${1}${_C_RESET}"
+}
+
+log_separator() {
+    echo -e "${_C_GRAY}${_S_LINE}${_C_RESET}"
+}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Utilities
+# ─────────────────────────────────────────────────────────────────────────────
+
+die() {
+    log_error "$1"
+    exit "${2:-1}"
+}
+
+require_cmd() {
+    command -v "$1" &>/dev/null || die "Required command not found: $1"
+}
+
+# Prompt for yes/no confirmation (reads from /dev/tty to work when stdin is piped)
+confirm() {
+    local prompt="${1:-Continue?}" default="${2:-y}"
+    local hint=$([[ "$default" == "y" ]] && echo "Y/n" || echo "y/N")
+
+    echo -en "${_C_YELLOW}${_S_LINE} ${_S_WARN}  ${prompt} [${hint}] ${_C_RESET}"
+    read -r response < /dev/tty
+    [[ -z "$response" ]] && response="$default"
+    [[ "$response" =~ ^[Yy]$ ]]
+}
