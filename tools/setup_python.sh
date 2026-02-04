@@ -4,46 +4,68 @@
 
 set -e
 
-echo "Installing uv..."
+# Calculate directories
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+DOTFILES_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+# Source Logger
+if [ -f "$DOTFILES_DIR/bash/bash_logger" ]; then
+    source "$DOTFILES_DIR/bash/bash_logger"
+else
+    echo "Error: bash_logger not found at $DOTFILES_DIR/bash/bash_logger"
+    exit 1
+fi
+
+log_header "Python Setup (uv)"
+
+log_section "Installing uv"
 
 if command -v uv &> /dev/null; then
-    echo "uv is already installed, checking for updates..."
+    log_info "uv is already installed, checking for updates..."
     uv self update 2>/dev/null || true
+    log_success "uv updated"
 else
+    log_step 1 "Installing uv..."
     # Install uv via the official installer
     curl -LsSf https://astral.sh/uv/install.sh | sh
 
     # Add to PATH for this session
     export PATH="$HOME/.local/bin:$PATH"
+    log_success "uv installed"
+    
+    # Note for the user about PATH
+    log_detail "Note: ~/.local/bin is automatically added to PATH by ~/.bash_paths"
 fi
 
 # Verify installation
 if ! command -v uv &> /dev/null; then
-    echo "Error: uv installation failed"
-    exit 1
+    die "uv installation failed"
 fi
 
-echo "uv $(uv --version) installed successfully"
+log_success "uv $(uv --version) ready"
+
+log_section "Python Environment"
 
 # Install a default Python version
-echo "Installing Python 3.12..."
+log_step 2 "Installing Python 3.12..."
 uv python install 3.12
+log_success "Python 3.12 installed"
 
 # Set Python 3.12 as the default
+log_step 3 "Pinning Python 3.12 as global default..."
 uv python pin 3.12 --global 2>/dev/null || true
+log_success "Global python version set"
 
 # Install ruff (fast Python linter and formatter)
-echo "Installing ruff..."
+log_step 4 "Installing ruff (linter/formatter)..."
 uv tool install ruff
+log_success "ruff installed"
 
-echo ""
-echo "Python setup complete!"
-echo ""
-echo "Quick reference:"
-echo "  uv python list          - List available Python versions"
-echo "  uv python install 3.13  - Install a Python version"
-echo "  uv init                 - Create a new project"
-echo "  uv add requests         - Add a dependency"
-echo "  uv run python script.py - Run with project dependencies"
-echo "  uv tool install ruff    - Install a CLI tool (like pipx)"
-echo ""
+log_section "Setup Complete"
+log_info "Quick reference:"
+log_kv "uv python list" "List available Python versions"
+log_kv "uv python install" "Install a Python version"
+log_kv "uv init" "Create a new project"
+log_kv "uv add" "Add a dependency"
+log_kv "uv run" "Run with project dependencies"
+log_kv "uv tool install" "Install a CLI tool (like pipx)"
