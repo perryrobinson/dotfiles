@@ -3,6 +3,17 @@
 
 set -e
 
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+DOTFILES_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+# Source Logger
+if [ -f "$DOTFILES_DIR/bash/bash_logger" ]; then
+    source "$DOTFILES_DIR/bash/bash_logger"
+else
+    echo "Error: bash_logger not found at $DOTFILES_DIR/bash/bash_logger"
+    exit 1
+fi
+
 # =============================================================================
 # Helper Functions
 # =============================================================================
@@ -29,20 +40,23 @@ get_latest_nvm_version() {
 
 ensure_yarn() {
     if command -v corepack &> /dev/null; then
-        echo "Enabling corepack for Yarn..."
+        log_step "Enabling corepack for Yarn..."
         corepack enable
+        # Explicitly prepare yarn to ensure it's installed and ready
+        log_detail "Preparing Yarn via corepack..."
+        corepack prepare yarn@stable --activate
     else
-        echo "Corepack not available, installing Yarn via npm..."
+        log_info "Corepack not available, installing Yarn via npm..."
         npm install -g yarn
     fi
 }
 
 ensure_typescript() {
     if ! command -v tsc &> /dev/null; then
-        echo "Installing TypeScript..."
+        log_step "Installing TypeScript..."
         npm install -g typescript
     else
-        echo "TypeScript already installed: $(tsc --version)"
+        log_info "TypeScript already installed: $(tsc --version)"
     fi
 }
 
@@ -50,14 +64,14 @@ ensure_typescript() {
 # NVM Installation
 # =============================================================================
 
-echo "=== Node.js Setup ==="
+log_header "Node.js Setup"
 
 if [ ! -d "$HOME/.nvm" ]; then
     NVM_VERSION=$(get_latest_nvm_version)
-    echo "Installing nvm $NVM_VERSION..."
+    log_step "Installing nvm $NVM_VERSION..."
     curl -o- "https://raw.githubusercontent.com/nvm-sh/nvm/$NVM_VERSION/install.sh" | bash
 else
-    echo "nvm is already installed"
+    log_info "nvm is already installed"
 fi
 
 load_nvm
@@ -67,14 +81,14 @@ load_nvm
 # =============================================================================
 
 if ! command -v node &> /dev/null; then
-    echo "Installing Node.js LTS..."
+    log_step "Installing Node.js LTS..."
     nvm install --lts
     nvm use --lts
 
-    echo "Updating npm to latest..."
+    log_step "Updating npm to latest..."
     npm install -g npm@latest
 else
-    echo "Node.js already installed: $(node --version)"
+    log_info "Node.js already installed: $(node --version)"
 fi
 
 # =============================================================================
@@ -84,7 +98,7 @@ fi
 if ! command -v yarn &> /dev/null; then
     ensure_yarn
 else
-    echo "Yarn already installed: $(yarn --version)"
+    log_info "Yarn already installed: $(yarn --version)"
 fi
 
 # =============================================================================
@@ -97,11 +111,23 @@ ensure_typescript
 # Done
 # =============================================================================
 
-echo ""
-echo "Node.js setup complete!"
-echo "  Node: $(node --version)"
-echo "  npm:  $(npm --version)"
-echo "  Yarn: $(yarn --version 2>/dev/null || echo 'not installed')"
-echo "  tsc:  $(tsc --version 2>/dev/null || echo 'not installed')"
-echo ""
-echo "Run 'source ~/.bashrc' or start a new terminal to use nvm"
+log_success "Node.js setup complete!"
+log_info "Node: $(node --version)"
+log_info "npm:  $(npm --version)"
+
+# Check Yarn and TSC versions outside of log_info to avoid subshell hangs/delays holding up the output
+YARN_VER="not installed"
+if command -v yarn &>/dev/null; then
+    # Use timeout to prevent hanging if yarn is still acting up
+    YARN_VER=$(timeout 2s yarn --version 2>/dev/null || echo "installed (version check timed out)")
+fi
+
+TSC_VER="not installed"
+if command -v tsc &>/dev/null; then
+    TSC_VER=$(tsc --version)
+fi
+
+log_info "Yarn: $YARN_VER"
+log_info "tsc:  $TSC_VER"
+
+log_info "Run 'source ~/.bashrc' or start a new terminal to use nvm"

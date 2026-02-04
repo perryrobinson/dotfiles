@@ -3,35 +3,43 @@
 
 set -e
 
-echo "=== Bun Setup ==="
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+DOTFILES_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+# Source Logger
+if [ -f "$DOTFILES_DIR/bash/bash_logger" ]; then
+    source "$DOTFILES_DIR/bash/bash_logger"
+else
+    echo "Error: bash_logger not found at $DOTFILES_DIR/bash/bash_logger"
+    exit 1
+fi
+
+log_header "Bun Setup"
 
 if [ -d "$HOME/.bun" ]; then
-    echo "Bun is already installed"
+    log_info "Bun is already installed"
 
-    # Load bun into current shell
+    # Load bun into current shell for version check
     export PATH="$HOME/.bun/bin:$PATH"
 
-    echo "Current version: $(bun --version)"
+    log_info "Current version: $(bun --version)"
 
-    read -p "Do you want to upgrade Bun? (y/n) " -n 1 -r
-    echo
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
-        echo "Upgrading Bun..."
+    if confirm "Do you want to upgrade Bun?"; then
+        log_step "Upgrading Bun..."
         bun upgrade
-        echo "Upgraded to: $(bun --version)"
+        log_success "Upgraded to: $(bun --version)"
     fi
 else
-    echo "Installing Bun..."
+    log_step "Installing Bun..."
     curl -fsSL https://bun.sh/install | bash
 
     # Load bun into current shell
     export PATH="$HOME/.bun/bin:$PATH"
 
-    echo "Bun installed successfully: $(bun --version)"
+    log_success "Bun installed successfully: $(bun --version)"
 fi
 
-echo ""
-echo "Bun setup complete!"
-echo "  Bun: $(bun --version)"
-echo ""
-echo "Run 'source ~/.bashrc' or start a new terminal to use bun"
+log_success "Bun setup complete!"
+log_info "Bun: $(bun --version)"
+
+log_info "Run 'source ~/.bashrc' or start a new terminal to use bun"

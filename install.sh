@@ -183,14 +183,14 @@ install_dev_tools() {
         bash "$DOTFILES_DIR/tools/setup_node.sh"
     fi
 
-    # Install Go
-    if confirm "Do you want to install Go?"; then
-        bash "$DOTFILES_DIR/tools/setup_golang.sh"
-    fi
-
     # Install Bun
     if confirm "Do you want to install Bun (JavaScript runtime)?"; then
         bash "$DOTFILES_DIR/tools/setup_bun.sh"
+    fi
+
+    # Install Go
+    if confirm "Do you want to install Go?"; then
+        bash "$DOTFILES_DIR/tools/setup_golang.sh"
     fi
 
     # Install Neovim with LazyVim
@@ -204,13 +204,13 @@ install_dev_tools() {
         install_dev_tools
     else
         log_info "You can set up development tools later by running individual scripts in tools/:"
+        log_kv "Git" "./tools/setup_git.sh"
         log_kv "Java" "./tools/setup_java.sh"
         log_kv "Python" "./tools/setup_python.sh"
         log_kv "Node.js" "./tools/setup_node.sh"
-        log_kv "Go" "./tools/setup_golang.sh"
         log_kv "Bun" "./tools/setup_bun.sh"
+        log_kv "Go" "./tools/setup_golang.sh"
         log_kv "Neovim" "./tools/setup_nvim.sh"
-        log_kv "Git" "./tools/setup_git.sh"
     fi
 
 log_section "Installation Complete"

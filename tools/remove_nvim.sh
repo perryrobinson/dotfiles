@@ -4,6 +4,19 @@
 set -e
 set -o pipefail
 
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+DOTFILES_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+# Source Logger
+if [ -f "$DOTFILES_DIR/bash/bash_logger" ]; then
+    source "$DOTFILES_DIR/bash/bash_logger"
+else
+    echo "Error: bash_logger not found at $DOTFILES_DIR/bash/bash_logger"
+    exit 1
+fi
+
+log_header "Neovim Removal"
+
 # --- Configuration ---
 INSTALL_PREFIX="/usr/local"
 NEOVIM_SRC="$HOME/neovim-src"
@@ -11,21 +24,17 @@ NEOVIM_CONFIG_DIR="$HOME/.config/nvim"
 TOOL_CONFIG_DIR="$HOME/.tool_configs"
 TOOL_CONFIG_FILE="$TOOL_CONFIG_DIR/nvim.sh"
 
-# --- Helper Functions ---
-info() { echo "INFO: $1"; }
-warn() { echo "WARN: $1"; }
-
 # --- Uninstall Neovim ---
-info "Removing Neovim from system..."
+log_step "Removing Neovim from system..."
 
 # Use the source directory if it exists to properly uninstall
 if [ -d "$NEOVIM_SRC" ]; then
-    info "Using existing source directory to uninstall Neovim..."
+    log_info "Using existing source directory to uninstall Neovim..."
     cd "$NEOVIM_SRC"
-    if sudo make uninstall; then
-        info "Neovim uninstalled successfully using 'make uninstall'"
+    if sudo make uninstall >/dev/null 2>&1; then
+        log_success "Neovim uninstalled successfully using 'make uninstall'"
     else
-        warn "Failed to uninstall using make. Falling back to manual removal."
+        log_warn "Failed to uninstall using make. Falling back to manual removal."
         sudo rm -rf "$INSTALL_PREFIX/bin/nvim"
         sudo rm -rf "$INSTALL_PREFIX/share/nvim"
         sudo rm -rf "$INSTALL_PREFIX/lib/nvim"
@@ -33,7 +42,7 @@ if [ -d "$NEOVIM_SRC" ]; then
     fi
 else
     # Manual removal if source directory doesn't exist
-    info "No source directory found. Removing Neovim files manually..."
+    log_info "No source directory found. Removing Neovim files manually..."
     sudo rm -rf "$INSTALL_PREFIX/bin/nvim"
     sudo rm -rf "$INSTALL_PREFIX/share/nvim"
     sudo rm -rf "$INSTALL_PREFIX/lib/nvim"
@@ -41,23 +50,29 @@ else
 fi
 
 # --- Remove config and data files ---
-info "Removing Neovim tool config file..."
-rm -rf "$TOOL_CONFIG_FILE"
+log_step "Removing configuration and data..."
+
+if [ -f "$TOOL_CONFIG_FILE" ]; then
+    log_detail "Removing Neovim tool config file..."
+    rm -rf "$TOOL_CONFIG_FILE"
+fi
 
 # Remove config directories
-info "Removing Neovim config directory..."
-rm -rf "$NEOVIM_CONFIG_DIR"
+if [ -d "$NEOVIM_CONFIG_DIR" ] || [ -L "$NEOVIM_CONFIG_DIR" ]; then
+    log_detail "Removing Neovim config directory..."
+    rm -rf "$NEOVIM_CONFIG_DIR"
+fi
 
 # Remove data directories
-info "Removing Neovim data directories..."
+log_detail "Removing Neovim data directories..."
 rm -rf "$HOME/.local/share/nvim"
 rm -rf "$HOME/.local/state/nvim"
 rm -rf "$HOME/.cache/nvim"
 
 # Remove source/build directory if it exists
 if [ -d "$NEOVIM_SRC" ]; then
-    info "Removing Neovim source directory..."
+    log_detail "Removing Neovim source directory..."
     rm -rf "$NEOVIM_SRC"
 fi
 
-info "Neovim removal complete. You may need to restart your shell for changes to take effect."
+log_success "Neovim removal complete. You may need to restart your shell for changes to take effect."
