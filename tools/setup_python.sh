@@ -1,50 +1,49 @@
 #!/usr/bin/env bash
-# Install pyenv for Python version management
-echo "Installing pyenv..."
-if [ ! -d "$HOME/.pyenv" ]; then
-    # Install dependencies if on Debian/Ubuntu
-    if command -v apt-get &> /dev/null; then
-        echo "Installing pyenv dependencies..."
-        sudo apt-get update
-        sudo apt-get install -y make build-essential libssl-dev zlib1g-dev \
-        libbz2-dev libreadline-dev libsqlite3-dev wget curl llvm \
-        libncursesw5-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev
-    fi
-   
-    # Install pyenv
-    git clone https://github.com/pyenv/pyenv.git ~/.pyenv
-   
-    # Set up environment for pyenv
-    export PYENV_ROOT="$HOME/.pyenv"
-    export PATH="$PYENV_ROOT/bin:$PATH"
-    eval "$(pyenv init --path 2>/dev/null || true)"
-    eval "$(pyenv init - 2>/dev/null || true)"
-   
-    # Install latest Python
-    echo "Installing latest Python..."
-    pyenv install 3.12.0
-    pyenv global 3.12.0
-   
-    echo "Python setup complete"
+# Install uv for Python version and package management
+# uv replaces pyenv, pip, pipx, poetry, and virtualenv with a single fast tool
+
+set -e
+
+echo "Installing uv..."
+
+if command -v uv &> /dev/null; then
+    echo "uv is already installed, checking for updates..."
+    uv self update 2>/dev/null || true
 else
-    echo "pyenv is already installed"
-    
-    # Set up environment for pyenv
-    export PYENV_ROOT="$HOME/.pyenv"
-    export PATH="$PYENV_ROOT/bin:$PATH"
-    eval "$(pyenv init --path 2>/dev/null || true)"
-    eval "$(pyenv init - 2>/dev/null || true)"
+    # Install uv via the official installer
+    curl -LsSf https://astral.sh/uv/install.sh | sh
+
+    # Add to PATH for this session
+    export PATH="$HOME/.local/bin:$PATH"
 fi
 
-echo "Setting up pipx..."
-if ! command -v pipx &> /dev/null; then
-    echo "Installing pipx..."
-    pip install --user pipx
-    pipx ensurepath
-    
-    export PATH="$HOME/.local/bin:$PATH"
-    
-    echo "pipx installed successfully"
-else
-    echo "pipx is already installed"
+# Verify installation
+if ! command -v uv &> /dev/null; then
+    echo "Error: uv installation failed"
+    exit 1
 fi
+
+echo "uv $(uv --version) installed successfully"
+
+# Install a default Python version
+echo "Installing Python 3.12..."
+uv python install 3.12
+
+# Set Python 3.12 as the default
+uv python pin 3.12 --global 2>/dev/null || true
+
+# Install ruff (fast Python linter and formatter)
+echo "Installing ruff..."
+uv tool install ruff
+
+echo ""
+echo "Python setup complete!"
+echo ""
+echo "Quick reference:"
+echo "  uv python list          - List available Python versions"
+echo "  uv python install 3.13  - Install a Python version"
+echo "  uv init                 - Create a new project"
+echo "  uv add requests         - Add a dependency"
+echo "  uv run python script.py - Run with project dependencies"
+echo "  uv tool install ruff    - Install a CLI tool (like pipx)"
+echo ""

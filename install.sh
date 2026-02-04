@@ -142,13 +142,13 @@ install_dev_tools() {
         source "$HOME/.bashrc"
     fi
     
-    # Install Python with pyenv
-    read -p "Do you want to install Python (using pyenv)? (y/n) " -n 1 -r
+    # Install Python with uv
+    read -p "Do you want to install Python (using uv)? (y/n) " -n 1 -r
     echo
     if [[ $REPLY =~ ^[Yy]$ ]]; then
         echo "Installing Python..."
         bash "$DOTFILES_DIR/tools/setup_python.sh"
-        # Need to source again after installing pyenv
+        # Need to source again after installing uv
         source "$HOME/.bashrc"
     fi
     
@@ -198,7 +198,7 @@ install_dev_tools() {
     else
         echo "You can set up development tools later by running:"
         echo "  ./tools/setup_java.sh    - Install SDKMAN for Java"
-        echo "  ./tools/setup_python.sh  - Install pyenv for Python"
+        echo "  ./tools/setup_python.sh  - Install uv for Python"
         echo "  ./tools/setup_node.sh    - Install nvm for Node.js"
         echo "  ./tools/setup_golang.sh  - Install Go"
         echo "  ./tools/setup_bun.sh     - Install Bun (JavaScript runtime)"

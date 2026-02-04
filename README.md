@@ -36,7 +36,7 @@ During installation, you'll be prompted to choose between two installation metho
 
 - **Development Tools**: Setup scripts for popular development environments:
   - Java: Uses SDKMAN for version management TODO add maven and have it configured properly with sdkman.
-  - Python: Uses pyenv for version management. TODO add poetry or uv. Also look at replacing pyenv/poetry with uv.
+  - Python: Uses uv for version management, virtual environments, and dependency management.
   - Node.js: Uses nvm for version management. Also installs yarn and TypeScript.
   - Bun: JavaScript runtime and toolkit (alternative to Node.js).
   - Go: Installs Go directly from the official website.
@@ -52,7 +52,7 @@ After installing the dotfiles, you can set up development tools:
 ./tools/setup_java.sh
 source ~/.bashrc
 
-# For Python development with pyenv
+# For Python development with uv
 ./tools/setup_python.sh
 source ~/.bashrc
 
@@ -130,10 +130,10 @@ source ~/.bashrc
 sdk version  # Should display SDKMAN version
 java --version
 
-# Test Python setup with pyenv
+# Test Python setup with uv
 ./tools/setup_python.sh
 source ~/.bashrc
-pyenv --version  # Should display pyenv version
+uv --version  # Should display uv version
 python --version
 
 # Test Node.js setup with nvm
@@ -165,7 +165,7 @@ ls -la ~/.tool_configs
 
 # Check if PATH is set up correctly for each tool
 echo $PATH | grep sdkman
-echo $PATH | grep pyenv
+echo $PATH | grep ".local/bin"  # Check for uv
 echo $PATH | grep nvm
 echo $PATH | grep ".bun/bin"        # Check for Bun
 echo $PATH | grep "/usr/local/go/bin" # Check for Go
@@ -173,7 +173,7 @@ echo $PATH | grep "$HOME/go/bin"    # Check for Go's GOPATH bin
 
 # Try installing a specific version of a tool
 sdk install java 17.0.8-tem
-pyenv install 3.10.0
+uv python install 3.10
 nvm install 16
 ```
 
@@ -233,13 +233,13 @@ dotfiles/
 │   ├── bash_secrets.template  # Template for secrets
 │   └── tool_configs/       # Tool-specific configurations
 │       ├── java.sh         # SDKMAN configuration
-│       ├── python.sh       # pyenv configuration
+│       ├── python.sh       # uv configuration
 │       ├── node.sh         # nvm configuration
 │       ├── golang.sh       # Go configuration
 │       └── bun.sh          # Bun configuration
 ├── tools/                  # Setup scripts for development tools
 │   ├── setup_java.sh       # Installs SDKMAN and Java
-│   ├── setup_python.sh     # Installs pyenv and Python
+│   ├── setup_python.sh     # Installs uv and Python
 │   ├── setup_node.sh       # Installs nvm and Node.js
 │   ├── setup_golang.sh     # Installs Go
 │   └── setup_bun.sh        # Installs Bun
@@ -265,59 +265,58 @@ git pull
 
 This will update your configuration while preserving your personal settings in `.bash_secrets`.
 
+## uv Quick Reference
+
+uv is used for Python version management, virtual environments, and dependency management.
+
+### Python Version Management
+
+```bash
+uv python list              # List available versions
+uv python install 3.12      # Install a version
+uv python pin 3.12          # Pin version for current project
+uv python pin 3.12 --global # Pin global default version
+```
+
+### Project Management
+
+```bash
+uv init                     # Create new project (pyproject.toml)
+uv add requests pandas      # Add dependencies
+uv add --dev pytest ruff    # Add dev dependencies
+uv sync                     # Install all dependencies
+uv run python script.py     # Run with project dependencies
+uv run pytest               # Run tools with project deps
+```
+
+### Virtual Environments
+
+```bash
+uv venv                     # Create .venv in current directory
+uv venv --python 3.11       # Create with specific Python version
+source .venv/bin/activate   # Activate (or let uv run handle it)
+```
+
+### CLI Tools (replaces pipx)
+
+```bash
+uv tool install ruff        # Install CLI tool globally
+uv tool install black
+uv tool list                # List installed tools
+uv tool upgrade ruff        # Upgrade a tool
+```
+
+### Lambda Deployment
+
+uv produces standard artifacts compatible with Lambda:
+
+```bash
+uv export --format requirements-txt > requirements.txt
+uv pip install -r requirements.txt --target ./package
+cd package && zip -r ../deployment.zip .
+```
+
 ## Next Steps
-
-### Python - replacing pyenv and poetry with uv
-
-uv has the potential to replace both pyenv and poetry, worth exploring it. but uv must be installed as the standalone tool instead of just as a python dependency
-
-Install uv as the standalone tool
-
-```bash
-# download the uv standalone
-curl -LsSf https://astral.sh/uv/install.sh | sh
-
-# add this to your .bash_paths
-# uv
-export PATH="$HOME/.cargo/bin:$PATH"
-```
-
-Using uv for Python version management (replacing pyenv)
-Now you can use uv to manage Python versions:
-
-```bash
-# Install a specific Python version
-uv python install 3.12
-
-# Pin global python verison
-uv python pin --global <version>
-
-# Use a specific Python version
-uv python use 3.12
-
-# Pin repository level python version
-uv python pin <version>
-
-# Create a virtual environment with a specific Python version
-uv venv --python 3.12
-```
-
-Using uv for dependency management (replacing poetry)
-For dependency management similar to poetry:
-
-```bash
-# Initialize a new project (creates pyproject.toml)
-uv init
-
-# Add dependencies
-uv pip add numpy pandas
-
-# Add dev dependencies
-uv pip add --dev pytest black
-
-# Install all dependencies from pyproject.toml
-uv pip sync
-```
 
 ### Neovim
 
