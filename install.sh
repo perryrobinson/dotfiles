@@ -123,7 +123,15 @@ chmod +x "$DOTFILES_DIR/tools/"*.sh
 install_dev_tools() {
     # Source the bashrc to ensure environment is up to date
     source "$HOME/.bashrc"
-    
+
+    # Setup Git configuration (first, as other tools may need git)
+    read -p "Do you want to set up Git configuration and SSH keys? (y/n) " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        echo "Setting up Git..."
+        bash "$DOTFILES_DIR/tools/setup_git.sh"
+    fi
+
     # Install Java with SDKMAN
     read -p "Do you want to install Java (using SDKMAN)? (y/n) " -n 1 -r
     echo
@@ -179,14 +187,6 @@ install_dev_tools() {
     if [[ $REPLY =~ ^[Yy]$ ]]; then
         echo "Installing Neovim with LazyVim..."
         bash "$DOTFILES_DIR/tools/setup_nvim.sh"
-    fi
-
-    # Setup Git configuration
-    read -p "Do you want to set up Git configuration and SSH keys? (y/n) " -n 1 -r
-    echo
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
-        echo "Setting up Git..."
-        bash "$DOTFILES_DIR/tools/setup_git.sh"
     fi
 }
 
