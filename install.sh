@@ -7,7 +7,7 @@ BACKUP_DIR="$HOME/.dotfiles_backup_$(date +%Y%m%d%H%M%S)"
 mkdir -p "$BACKUP_DIR"
 
 # Backup existing files
-for file in .bashrc .bash_aliases .bash_functions .bash_paths; do
+for file in .bashrc .bash_aliases .bash_functions .bash_paths .bash_logger; do
     if [ -f "$HOME/$file" ] || [ -L "$HOME/$file" ]; then
         echo "Backing up $HOME/$file"
         mv "$HOME/$file" "$BACKUP_DIR/"
@@ -48,6 +48,7 @@ install_files "$DOTFILES_DIR/bash/bashrc" "$HOME/.bashrc"
 install_files "$DOTFILES_DIR/bash/bash_aliases" "$HOME/.bash_aliases"
 install_files "$DOTFILES_DIR/bash/bash_functions" "$HOME/.bash_functions"
 install_files "$DOTFILES_DIR/bash/bash_paths" "$HOME/.bash_paths"
+install_files "$DOTFILES_DIR/bash/bash_logger" "$HOME/.bash_logger"
 
 # Create secrets file from template if it doesn't exist
 if [ ! -f "$HOME/.bash_secrets" ]; then

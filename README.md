@@ -33,6 +33,7 @@ During installation, you'll be prompted to choose between two installation metho
   - `.bash_functions`: Useful shell functions
   - `.bash_paths`: PATH management
   - `.bash_secrets`: Template for environment variables and API keys
+  - `.bash_logger`: Logging library for scripts (source explicitly when needed)
 
 - **Development Tools**: Setup scripts for popular development environments:
   - Java: Uses SDKMAN for version management TODO add maven and have it configured properly with sdkman.
@@ -231,6 +232,7 @@ dotfiles/
 │   ├── bash_functions      # Custom shell functions
 │   ├── bash_paths          # PATH management
 │   ├── bash_secrets.template  # Template for secrets
+│   ├── bash_logger         # Logging library for scripts
 │   └── tool_configs/       # Tool-specific configurations
 │       ├── java.sh         # SDKMAN configuration
 │       ├── python.sh       # uv configuration
