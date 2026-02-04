@@ -39,7 +39,6 @@ During installation, you'll be prompted to choose between two installation metho
   - Python: Uses pyenv for version management. TODO add poetry or uv. Also look at replacing pyenv/poetry with uv.
   - Node.js: Uses nvm for version management. Also installs yarn.
   - Go: Installs Go directly from the official website.
-  - PHP: Installs PHP, Composer, and Laravel installer.
 
 - **Docker Support**: Optional installation of Docker and Docker Compose
 
@@ -62,10 +61,6 @@ source ~/.bashrc
 
 # For Go development
 ./tools/setup_golang.sh
-source ~/.bashrc
-
-# For PHP development with Composer and Laravel
-./tools/setup_php.sh
 source ~/.bashrc
 ```
 
@@ -148,13 +143,6 @@ node --version
 ./tools/setup_golang.sh
 source ~/.bashrc
 go version  # Should display Go version
-
-# Test PHP setup
-./tools/setup_php.sh
-source ~/.bashrc
-php --version      # Should display PHP version
-composer --version # Should display Composer version
-laravel --version  # Should display Laravel installer version
 ```
 
 ### Verifying Tool Configurations
@@ -171,7 +159,6 @@ echo $PATH | grep pyenv
 echo $PATH | grep nvm
 echo $PATH | grep "/usr/local/go/bin" # Check for Go
 echo $PATH | grep "$HOME/go/bin"    # Check for Go's GOPATH bin
-echo $PATH | grep "composer"        # Check for Composer global bin
 
 # Try installing a specific version of a tool
 sdk install java 17.0.8-tem
@@ -237,14 +224,12 @@ dotfiles/
 │       ├── java.sh         # SDKMAN configuration
 │       ├── python.sh       # pyenv configuration
 │       ├── node.sh         # nvm configuration
-│       ├── golang.sh       # Go configuration
-│       └── php.sh          # PHP/Composer configuration
+│       └── golang.sh       # Go configuration
 ├── tools/                  # Setup scripts for development tools
 │   ├── setup_java.sh       # Installs SDKMAN and Java
 │   ├── setup_python.sh     # Installs pyenv and Python
 │   ├── setup_node.sh       # Installs nvm and Node.js
-│   ├── setup_golang.sh     # Installs Go
-│   └── setup_php.sh        # Installs PHP, Composer, and Laravel
+│   └── setup_golang.sh     # Installs Go
 ├── test/                   # Docker-based testing environment
 │   ├── Dockerfile          # Test container definition
 │   ├── docker-compose.yml  # Container orchestration
