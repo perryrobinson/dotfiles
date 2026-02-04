@@ -37,7 +37,8 @@ During installation, you'll be prompted to choose between two installation metho
 - **Development Tools**: Setup scripts for popular development environments:
   - Java: Uses SDKMAN for version management TODO add maven and have it configured properly with sdkman.
   - Python: Uses pyenv for version management. TODO add poetry or uv. Also look at replacing pyenv/poetry with uv.
-  - Node.js: Uses nvm for version management. Also installs yarn.
+  - Node.js: Uses nvm for version management. Also installs yarn and TypeScript.
+  - Bun: JavaScript runtime and toolkit (alternative to Node.js).
   - Go: Installs Go directly from the official website.
 
 - **Docker Support**: Optional installation of Docker and Docker Compose
@@ -57,6 +58,10 @@ source ~/.bashrc
 
 # For Node.js development with nvm
 ./tools/setup_node.sh
+source ~/.bashrc
+
+# For Bun development
+./tools/setup_bun.sh
 source ~/.bashrc
 
 # For Go development
@@ -139,6 +144,11 @@ npm --version
 yarn --version
 node --version
 
+# Test Bun setup
+./tools/setup_bun.sh
+source ~/.bashrc
+bun --version  # Should display Bun version
+
 # Test Go setup
 ./tools/setup_golang.sh
 source ~/.bashrc
@@ -157,6 +167,7 @@ ls -la ~/.tool_configs
 echo $PATH | grep sdkman
 echo $PATH | grep pyenv
 echo $PATH | grep nvm
+echo $PATH | grep ".bun/bin"        # Check for Bun
 echo $PATH | grep "/usr/local/go/bin" # Check for Go
 echo $PATH | grep "$HOME/go/bin"    # Check for Go's GOPATH bin
 
@@ -224,12 +235,14 @@ dotfiles/
 │       ├── java.sh         # SDKMAN configuration
 │       ├── python.sh       # pyenv configuration
 │       ├── node.sh         # nvm configuration
-│       └── golang.sh       # Go configuration
+│       ├── golang.sh       # Go configuration
+│       └── bun.sh          # Bun configuration
 ├── tools/                  # Setup scripts for development tools
 │   ├── setup_java.sh       # Installs SDKMAN and Java
 │   ├── setup_python.sh     # Installs pyenv and Python
 │   ├── setup_node.sh       # Installs nvm and Node.js
-│   └── setup_golang.sh     # Installs Go
+│   ├── setup_golang.sh     # Installs Go
+│   └── setup_bun.sh        # Installs Bun
 ├── test/                   # Docker-based testing environment
 │   ├── Dockerfile          # Test container definition
 │   ├── docker-compose.yml  # Container orchestration

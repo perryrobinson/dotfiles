@@ -164,6 +164,15 @@ install_dev_tools() {
         source "$HOME/.bashrc"
     fi
 
+    # Install Bun
+    read -p "Do you want to install Bun (JavaScript runtime)? (y/n) " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        echo "Installing Bun..."
+        bash "$DOTFILES_DIR/tools/setup_bun.sh"
+        source "$HOME/.bashrc"
+    fi
+
     # Install Neovim with LazyVim
     read -p "Do you want to install Neovim with LazyVim? (y/n) " -n 1 -r
     echo
@@ -192,6 +201,7 @@ install_dev_tools() {
         echo "  ./tools/setup_python.sh  - Install pyenv for Python"
         echo "  ./tools/setup_node.sh    - Install nvm for Node.js"
         echo "  ./tools/setup_golang.sh  - Install Go"
+        echo "  ./tools/setup_bun.sh     - Install Bun (JavaScript runtime)"
         echo "  ./tools/setup_nvim.sh    - Install Neovim with LazyVim"
         echo "  ./tools/setup_git.sh     - Configure Git and SSH keys"
     fi
