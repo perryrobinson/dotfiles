@@ -1,18 +1,11 @@
 #!/usr/bin/env bash
 # Install Go (Golang)
 
-set -e
+set -euo pipefail
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 DOTFILES_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
-
-# Source Logger
-if [ -f "$DOTFILES_DIR/bash/bash_logger" ]; then
-    source "$DOTFILES_DIR/bash/bash_logger"
-else
-    echo "Error: bash_logger not found at $DOTFILES_DIR/bash/bash_logger"
-    exit 1
-fi
+source "$DOTFILES_DIR/tools/common.sh"
 
 GO_VERSION="1.22.3"
 INSTALL_DIR="/usr/local"
@@ -21,7 +14,7 @@ DOWNLOAD_URL="https://golang.org/dl/${GO_ARCHIVE}"
 
 log_header "Go Setup"
 
-log_step "Checking for existing Go installation..."
+log_step 1 "Checking for existing Go installation..."
 if [ -d "${INSTALL_DIR}/go" ] && [ -x "${INSTALL_DIR}/go/bin/go" ]; then
     CURRENT_VERSION=$(${INSTALL_DIR}/go/bin/go version | awk '{print $3}' | sed 's/go//')
     if [ "${CURRENT_VERSION}" == "${GO_VERSION}" ]; then
@@ -33,7 +26,7 @@ if [ -d "${INSTALL_DIR}/go" ] && [ -x "${INSTALL_DIR}/go/bin/go" ]; then
     fi
 fi
 
-log_step "Installing Go version ${GO_VERSION}..."
+log_step 2 "Installing Go version ${GO_VERSION}..."
 
 # Check for dependencies
 log_detail "Checking for curl..."
@@ -57,7 +50,7 @@ if [ ! -f "${GO_ARCHIVE}" ]; then
     die "Failed to download Go archive. Please check the URL or your internet connection."
 fi
 
-log_step "Extracting Go archive to ${INSTALL_DIR}..."
+log_step 3 "Extracting Go archive to ${INSTALL_DIR}..."
 sudo tar -C "${INSTALL_DIR}" -xzf "${GO_ARCHIVE}"
 
 if [ ! -d "${INSTALL_DIR}/go" ]; then

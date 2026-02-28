@@ -1,19 +1,11 @@
 #!/usr/bin/env bash
 # Neovim setup script (build from source)
 
-set -e
-set -o pipefail
+set -euo pipefail
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 DOTFILES_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
-
-# Source Logger
-if [ -f "$DOTFILES_DIR/bash/bash_logger" ]; then
-    source "$DOTFILES_DIR/bash/bash_logger"
-else
-    echo "Error: bash_logger not found at $DOTFILES_DIR/bash/bash_logger"
-    exit 1
-fi
+source "$DOTFILES_DIR/tools/common.sh"
 
 log_header "Neovim Setup"
 
@@ -28,7 +20,7 @@ BACKUP_DIR_BASE="$HOME/.dotfiles_nvim_backup"
 
 # --- Check for required tools ---
 for cmd in git make; do
-    if ! command -v $cmd &>/dev/null; then
+    if ! command -v "$cmd" &>/dev/null; then
         die "$cmd is not installed. Please install build dependencies."
     fi
 done

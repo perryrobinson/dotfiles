@@ -1,18 +1,11 @@
 #!/usr/bin/env bash
 # Install Node.js ecosystem: nvm, Node.js, npm, Yarn, TypeScript
 
-set -e
+set -euo pipefail
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 DOTFILES_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
-
-# Source Logger
-if [ -f "$DOTFILES_DIR/bash/bash_logger" ]; then
-    source "$DOTFILES_DIR/bash/bash_logger"
-else
-    echo "Error: bash_logger not found at $DOTFILES_DIR/bash/bash_logger"
-    exit 1
-fi
+source "$DOTFILES_DIR/tools/common.sh"
 
 # =============================================================================
 # Helper Functions
@@ -20,7 +13,9 @@ fi
 
 load_nvm() {
     export NVM_DIR="$HOME/.nvm"
+    set +u
     [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+    set -u
 }
 
 get_latest_nvm_version() {
@@ -68,7 +63,7 @@ log_header "Node.js Setup"
 
 if [ ! -d "$HOME/.nvm" ]; then
     NVM_VERSION=$(get_latest_nvm_version)
-    log_step "Installing nvm $NVM_VERSION..."
+    log_step 1 "Installing nvm $NVM_VERSION..."
     curl -o- "https://raw.githubusercontent.com/nvm-sh/nvm/$NVM_VERSION/install.sh" | bash
 else
     log_info "nvm is already installed"
@@ -81,11 +76,11 @@ load_nvm
 # =============================================================================
 
 if ! command -v node &> /dev/null; then
-    log_step "Installing Node.js LTS..."
+    log_step 2 "Installing Node.js LTS..."
     nvm install --lts
     nvm use --lts
 
-    log_step "Updating npm to latest..."
+    log_step 3 "Updating npm to latest..."
     npm install -g npm@latest
 else
     log_info "Node.js already installed: $(node --version)"

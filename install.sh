@@ -8,13 +8,7 @@ set -euo pipefail
 DOTFILES_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 BACKUP_DIR="$HOME/.dotfiles_backup_$(date +%Y%m%d%H%M%S)"
 
-# Source Logger
-if [ -f "$DOTFILES_DIR/bash/bash_logger" ]; then
-    source "$DOTFILES_DIR/bash/bash_logger"
-else
-    echo "Error: bash_logger not found at $DOTFILES_DIR/bash/bash_logger"
-    exit 1
-fi
+source "$DOTFILES_DIR/tools/common.sh"
 
 log_header "Dotfiles Installation"
 log_info "Dotfiles directory: $DOTFILES_DIR"
@@ -95,11 +89,6 @@ for file in "$DOTFILES_DIR/bash/tool_configs/"*.sh; do
     fi
 done
 
-# Source the bashrc to get the environment ready
-# Note: We can't fully rely on this affecting the current script's environment for everything,
-# but it helps for functions/aliases if we were to use them.
-# source "$HOME/.bashrc" 
-
 # Install packages if on Debian/Ubuntu
 if command -v apt-get &> /dev/null; then
     log_section "System Packages"
@@ -121,7 +110,6 @@ if command -v apt-get &> /dev/null; then
         # Read packages from essentials.txt file
         log_detail "Installing packages..."
         if [ -f "$DOTFILES_DIR/packages/essentials.txt" ]; then
-            # We use xargs to install efficiently
             if xargs sudo apt-get install -y < "$DOTFILES_DIR/packages/essentials.txt"; then
                 log_success "Essential packages installed"
             else
@@ -138,7 +126,7 @@ if command -v apt-get &> /dev/null; then
             if confirm "Do you want to install Docker?"; then
                 log_step 2 "Installing Docker..."
                 curl -fsSL https://get.docker.com | sh
-                sudo usermod -aG docker $USER
+                sudo usermod -aG docker "$USER"
                 log_warn "You may need to log out and back in for Docker permissions to take effect"
             fi
         fi
@@ -199,19 +187,19 @@ install_dev_tools() {
     fi
 }
 
-    # Ask if the user wants to install development tools
-    if confirm "Do you want to set up development tools now?"; then
-        install_dev_tools
-    else
-        log_info "You can set up development tools later by running individual scripts in tools/:"
-        log_kv "Git" "./tools/setup_git.sh"
-        log_kv "Java" "./tools/setup_java.sh"
-        log_kv "Python" "./tools/setup_python.sh"
-        log_kv "Node.js" "./tools/setup_node.sh"
-        log_kv "Bun" "./tools/setup_bun.sh"
-        log_kv "Go" "./tools/setup_golang.sh"
-        log_kv "Neovim" "./tools/setup_nvim.sh"
-    fi
+# Ask if the user wants to install development tools
+if confirm "Do you want to set up development tools now?"; then
+    install_dev_tools
+else
+    log_info "You can set up development tools later by running individual scripts in tools/:"
+    log_kv "Git" "./tools/setup_git.sh"
+    log_kv "Java" "./tools/setup_java.sh"
+    log_kv "Python" "./tools/setup_python.sh"
+    log_kv "Node.js" "./tools/setup_node.sh"
+    log_kv "Bun" "./tools/setup_bun.sh"
+    log_kv "Go" "./tools/setup_golang.sh"
+    log_kv "Neovim" "./tools/setup_nvim.sh"
+fi
 
 log_section "Installation Complete"
 if [ "$install_method" = "symlink" ]; then

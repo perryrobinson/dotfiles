@@ -1,19 +1,11 @@
 #!/usr/bin/env bash
 # Neovim removal script (build from source)
 
-set -e
-set -o pipefail
+set -euo pipefail
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 DOTFILES_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
-
-# Source Logger
-if [ -f "$DOTFILES_DIR/bash/bash_logger" ]; then
-    source "$DOTFILES_DIR/bash/bash_logger"
-else
-    echo "Error: bash_logger not found at $DOTFILES_DIR/bash/bash_logger"
-    exit 1
-fi
+source "$DOTFILES_DIR/tools/common.sh"
 
 log_header "Neovim Removal"
 
@@ -54,7 +46,7 @@ log_step "Removing configuration and data..."
 
 if [ -f "$TOOL_CONFIG_FILE" ]; then
     log_detail "Removing Neovim tool config file..."
-    rm -rf "$TOOL_CONFIG_FILE"
+    rm -f "$TOOL_CONFIG_FILE"
 fi
 
 # Remove config directories

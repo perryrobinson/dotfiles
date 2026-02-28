@@ -1,18 +1,11 @@
 #!/usr/bin/env bash
 # Git setup script for user authentication and basic configuration
 
-set -e
+set -euo pipefail
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 DOTFILES_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
-
-# Source Logger
-if [ -f "$DOTFILES_DIR/bash/bash_logger" ]; then
-    source "$DOTFILES_DIR/bash/bash_logger"
-else
-    echo "Error: bash_logger not found at $DOTFILES_DIR/bash/bash_logger"
-    exit 1
-fi
+source "$DOTFILES_DIR/tools/common.sh"
 
 log_header "Git Setup"
 
@@ -21,7 +14,7 @@ if ! command -v git &> /dev/null; then
     die "Git is not installed. Please install git first."
 fi
 
-log_step "Setting up Git configuration..."
+log_step 1 "Setting up Git configuration..."
 
 # --- Get user information ---
 log_info "Please provide your Git configuration details:"
@@ -82,7 +75,7 @@ ssh_key="$ssh_dir/id_ed25519"
 
 if [ ! -f "$ssh_key" ]; then
     if confirm "Do you want to generate an SSH key for Git authentication?"; then
-        log_step "Generating SSH key..."
+        log_step 2 "Generating SSH key..."
         mkdir -p "$ssh_dir"
         ssh-keygen -t ed25519 -C "$git_email" -f "$ssh_key" -N ""
         
@@ -105,7 +98,7 @@ if [ ! -f "$ssh_key" ]; then
         read -p "Press Enter after you've added the key to your Git hosting service..."
         
         # Test SSH connection to common Git hosts
-        log_step "Testing SSH connections..."
+        log_step 3 "Testing SSH connections..."
         
         # Test GitHub
         if ssh -T git@github.com -o ConnectTimeout=5 -o StrictHostKeyChecking=no 2>&1 | grep -q "successfully authenticated"; then

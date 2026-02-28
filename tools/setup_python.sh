@@ -2,19 +2,11 @@
 # Install uv for Python version and package management
 # uv replaces pyenv, pip, pipx, poetry, and virtualenv with a single fast tool
 
-set -e
+set -euo pipefail
 
-# Calculate directories
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 DOTFILES_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
-
-# Source Logger
-if [ -f "$DOTFILES_DIR/bash/bash_logger" ]; then
-    source "$DOTFILES_DIR/bash/bash_logger"
-else
-    echo "Error: bash_logger not found at $DOTFILES_DIR/bash/bash_logger"
-    exit 1
-fi
+source "$DOTFILES_DIR/tools/common.sh"
 
 log_header "Python Setup (uv)"
 

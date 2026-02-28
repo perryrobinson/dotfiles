@@ -1,19 +1,11 @@
 #!/usr/bin/env bash
 # Install SDKMAN and set up the Java environment
 
-set -e # Exit immediately if a command exits with a non-zero status
+set -euo pipefail
 
-# Calculate directories
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 DOTFILES_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
-
-# Source Logger
-if [ -f "$DOTFILES_DIR/bash/bash_logger" ]; then
-    source "$DOTFILES_DIR/bash/bash_logger"
-else
-    echo "Error: bash_logger not found at $DOTFILES_DIR/bash/bash_logger"
-    exit 1
-fi
+source "$DOTFILES_DIR/tools/common.sh"
 
 # --- Configuration ---
 JAVA_VERSION="21.0.3-tem" # Specify a recent Long-Term Support (LTS) version
@@ -43,14 +35,15 @@ fi
 if [ ! -d "$HOME/.sdkman" ]; then
     log_step 2 "Installing SDKMAN..."
     curl -s "https://get.sdkman.io" | bash
-    # Source SDKMAN to make it available in this script session
-    source "$HOME/.sdkman/bin/sdkman-init.sh"
     log_success "SDKMAN installed"
 else
-    log_success "SDKMAN is already installed."
-    # Source SDKMAN to ensure its commands are available
-    source "$HOME/.sdkman/bin/sdkman-init.sh"
+    log_success "SDKMAN is already installed"
 fi
+
+# Source SDKMAN to ensure its commands are available
+set +u
+source "$HOME/.sdkman/bin/sdkman-init.sh"
+set -u
 
 log_section "Java & Maven"
 
@@ -61,7 +54,7 @@ if ! sdk home java "$JAVA_VERSION" >/dev/null 2>&1; then
     sdk install java "$JAVA_VERSION"
     log_success "Java $JAVA_VERSION installed"
 else
-    log_success "Java version $JAVA_VERSION is already installed."
+    log_success "Java version $JAVA_VERSION is already installed"
 fi
 
 # Set as default explicitly
@@ -74,10 +67,10 @@ if ! command -v mvn >/dev/null; then
     sdk install maven "$MAVEN_VERSION"
     log_success "Maven installed"
 else
-    log_success "Maven is already installed."
+    log_success "Maven is already installed"
 fi
 
 log_section "Setup Complete"
 log_info "Current active versions:"
-echo "Java: $(sdk current java)"
-echo "Maven: $(sdk current maven)"
+log_kv "Java"  "$(sdk current java)"
+log_kv "Maven" "$(sdk current maven)"
