@@ -1,49 +1,71 @@
 #!/usr/bin/env bash
 # Dotfiles installation script
+
+# Strict mode
+set -euo pipefail
+
+# Calculate directories
 DOTFILES_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 BACKUP_DIR="$HOME/.dotfiles_backup_$(date +%Y%m%d%H%M%S)"
 
+source "$DOTFILES_DIR/tools/common.sh"
+
+log_header "Dotfiles Installation"
+log_info "Dotfiles directory: $DOTFILES_DIR"
+log_info "Backup directory: $BACKUP_DIR"
+
 # Create backup directory
+log_step 1 "Creating backup directory..."
 mkdir -p "$BACKUP_DIR"
+log_success "Created $BACKUP_DIR"
 
 # Backup existing files
+log_step 2 "Backing up existing configuration..."
 for file in .bashrc .bash_aliases .bash_functions .bash_paths .bash_logger; do
     if [ -f "$HOME/$file" ] || [ -L "$HOME/$file" ]; then
-        echo "Backing up $HOME/$file"
+        log_detail "Backing up $HOME/$file"
         mv "$HOME/$file" "$BACKUP_DIR/"
     fi
 done
 
 # Backup .bash_secrets but keep it in place (copy instead of move)
 if [ -f "$HOME/.bash_secrets" ] || [ -L "$HOME/.bash_secrets" ]; then
-    echo "Backing up $HOME/.bash_secrets (keeping original in place)"
+    log_detail "Backing up $HOME/.bash_secrets (keeping original in place)"
     cp "$HOME/.bash_secrets" "$BACKUP_DIR/"
 fi
 
 # Ask user for installation method
-echo "Do you want to use symlinks? (y/n)"
-echo "  y) Symlinks (recommended for git tracking - changes in home directory will affect repository)"
-echo "  n) Copies (recommended for local-only changes - changes in home directory won't affect repository)"
-read -n 1 -r install_method
-echo
-if [[ $install_method =~ ^[Yy]$ ]]; then
+log_section "Installation Configuration"
+log_info "Select installation method:"
+log_kv "Symlinks" "Recommended for git tracking"
+log_kv "Copies" "Recommended for local-only changes"
+
+if confirm "Do you want to use symlinks?" "y"; then
     install_method="symlink"
 else
     install_method="copy"
 fi
+log_info "Selected method: $install_method"
 
 # Function to install files
 install_files() {
     local src="$1"
     local dest="$2"
+    
+    # Create parent directory if it doesn't exist
+    mkdir -p "$(dirname "$dest")"
+    
     if [ "$install_method" = "symlink" ]; then
         ln -sf "$src" "$dest"
+        log_success "Linked $(basename "$src") -> $dest"
     else
         cp "$src" "$dest"
+        log_success "Copied $(basename "$src") -> $dest"
     fi
 }
 
 # Install configuration files
+log_section "Installing Core Configuration"
 install_files "$DOTFILES_DIR/bash/bashrc" "$HOME/.bashrc"
 install_files "$DOTFILES_DIR/bash/bash_aliases" "$HOME/.bash_aliases"
 install_files "$DOTFILES_DIR/bash/bash_functions" "$HOME/.bash_functions"
@@ -52,12 +74,13 @@ install_files "$DOTFILES_DIR/bash/bash_logger" "$HOME/.bash_logger"
 
 # Create secrets file from template if it doesn't exist
 if [ ! -f "$HOME/.bash_secrets" ]; then
-    echo "Creating ~/.bash_secrets from template"
+    log_info "Creating ~/.bash_secrets from template"
     cp "$DOTFILES_DIR/bash/bash_secrets.template" "$HOME/.bash_secrets"
-    echo "Please edit ~/.bash_secrets to add your actual credentials"
+    log_warn "Please edit ~/.bash_secrets to add your actual credentials"
 fi
 
 # Create tool configs directory and install files
+log_section "Installing Tool Configurations"
 mkdir -p "$HOME/.tool_configs"
 for file in "$DOTFILES_DIR/bash/tool_configs/"*.sh; do
     if [ -f "$file" ]; then
@@ -66,52 +89,56 @@ for file in "$DOTFILES_DIR/bash/tool_configs/"*.sh; do
     fi
 done
 
-# Source the bashrc to get the environment ready
-source "$HOME/.bashrc"
-
 # Install packages if on Debian/Ubuntu
 if command -v apt-get &> /dev/null; then
-    read -p "Do you want to install essential packages? (y/n) " -n 1 -r
-    echo
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
-        echo "Installing essential packages..."
+    log_section "System Packages"
+    if confirm "Do you want to install essential packages?"; then
+        log_step 1 "Installing essential packages..."
         
         # Set timezone to America/Chicago (CST)
-        echo "Setting timezone to America/Chicago..."
-        sudo ln -sf /usr/share/zoneinfo/America/Chicago /etc/localtime
-        echo "America/Chicago" | sudo tee /etc/timezone > /dev/null
+        log_detail "Setting timezone to America/Chicago..."
+        if sudo ln -sf /usr/share/zoneinfo/America/Chicago /etc/localtime && \
+           echo "America/Chicago" | sudo tee /etc/timezone > /dev/null; then
+           log_success "Timezone set"
+        else
+           log_error "Failed to set timezone"
+        fi
         
-        sudo apt-get update
+        log_detail "Updating apt repositories..."
+        sudo apt-get update >/dev/null
         
         # Read packages from essentials.txt file
+        log_detail "Installing packages..."
         if [ -f "$DOTFILES_DIR/packages/essentials.txt" ]; then
-            xargs sudo apt-get install -y < "$DOTFILES_DIR/packages/essentials.txt"
+            if xargs sudo apt-get install -y < "$DOTFILES_DIR/packages/essentials.txt"; then
+                log_success "Essential packages installed"
+            else
+                log_error "Failed to install some packages"
+            fi
         else
             # Fallback if file doesn't exist
             sudo apt-get install -y build-essential curl wget git htop jq zip unzip net-tools tree dos2unix
+            log_success "Default essential packages installed"
         fi
         
         # Install Docker if not already installed
         if ! command -v docker &> /dev/null; then
-            read -p "Do you want to install Docker? (y/n) " -n 1 -r
-            echo
-            if [[ $REPLY =~ ^[Yy]$ ]]; then
-                echo "Installing Docker..."
+            if confirm "Do you want to install Docker?"; then
+                log_step 2 "Installing Docker..."
                 curl -fsSL https://get.docker.com | sh
-                sudo usermod -aG docker $USER
-                echo "You may need to log out and back in for Docker permissions to take effect"
+                sudo usermod -aG docker "$USER"
+                log_warn "You may need to log out and back in for Docker permissions to take effect"
             fi
         fi
         
         # Install Docker Compose if not already installed
         if ! command -v docker-compose &> /dev/null; then
-            read -p "Do you want to install Docker Compose? (y/n) " -n 1 -r
-            echo
-            if [[ $REPLY =~ ^[Yy]$ ]]; then
-            # TODO: Don't pin docker-compose version
-                echo "Installing Docker Compose..."
+            if confirm "Do you want to install Docker Compose?"; then
+                # TODO: Don't pin docker-compose version
+                log_step 3 "Installing Docker Compose..."
                 sudo curl -L "https://github.com/docker/compose/releases/download/v2.20.3/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
                 sudo chmod +x /usr/local/bin/docker-compose
+                log_success "Docker Compose installed"
             fi
         fi
     fi
@@ -122,96 +149,63 @@ chmod +x "$DOTFILES_DIR/tools/"*.sh
 
 # Function to install development tools
 install_dev_tools() {
-    # Source the bashrc to ensure environment is up to date
-    source "$HOME/.bashrc"
-
-    # Setup Git configuration (first, as other tools may need git)
-    read -p "Do you want to set up Git configuration and SSH keys? (y/n) " -n 1 -r
-    echo
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
-        echo "Setting up Git..."
+    log_section "Development Tools Setup"
+    
+    # Setup Git configuration
+    if confirm "Do you want to set up Git configuration and SSH keys?"; then
         bash "$DOTFILES_DIR/tools/setup_git.sh"
     fi
 
     # Install Java with SDKMAN
-    read -p "Do you want to install Java (using SDKMAN)? (y/n) " -n 1 -r
-    echo
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
-        echo "Installing Java..."
+    if confirm "Do you want to install Java (using SDKMAN)?"; then
         bash "$DOTFILES_DIR/tools/setup_java.sh"
-        # Need to source again after installing SDKMAN
-        source "$HOME/.bashrc"
     fi
     
     # Install Python with uv
-    read -p "Do you want to install Python (using uv)? (y/n) " -n 1 -r
-    echo
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
-        echo "Installing Python..."
+    if confirm "Do you want to install Python (using uv)?"; then
         bash "$DOTFILES_DIR/tools/setup_python.sh"
-        # Need to source again after installing uv
-        source "$HOME/.bashrc"
     fi
     
     # Install Node.js with nvm
-    read -p "Do you want to install Node.js (using nvm)? (y/n) " -n 1 -r
-    echo
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
-        echo "Installing Node.js..."
+    if confirm "Do you want to install Node.js (using nvm)?"; then
         bash "$DOTFILES_DIR/tools/setup_node.sh"
-        # Need to source again after installing nvm
-        source "$HOME/.bashrc"
-    fi
-
-    # Install Go
-    read -p "Do you want to install Go? (y/n) " -n 1 -r
-    echo
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
-        echo "Installing Go..."
-        bash "$DOTFILES_DIR/tools/setup_golang.sh"
-        # Need to source again after Go installation (PATH changes)
-        source "$HOME/.bashrc"
     fi
 
     # Install Bun
-    read -p "Do you want to install Bun (JavaScript runtime)? (y/n) " -n 1 -r
-    echo
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
-        echo "Installing Bun..."
+    if confirm "Do you want to install Bun (JavaScript runtime)?"; then
         bash "$DOTFILES_DIR/tools/setup_bun.sh"
-        source "$HOME/.bashrc"
+    fi
+
+    # Install Go
+    if confirm "Do you want to install Go?"; then
+        bash "$DOTFILES_DIR/tools/setup_golang.sh"
     fi
 
     # Install Neovim with LazyVim
-    read -p "Do you want to install Neovim with LazyVim? (y/n) " -n 1 -r
-    echo
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
-        echo "Installing Neovim with LazyVim..."
+    if confirm "Do you want to install Neovim with LazyVim?"; then
         bash "$DOTFILES_DIR/tools/setup_nvim.sh"
     fi
 }
 
-    # Ask if the user wants to install development tools
-    read -p "Do you want to set up development tools now? (y/n) " -n 1 -r
-    echo
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
-        install_dev_tools
-    else
-        echo "You can set up development tools later by running:"
-        echo "  ./tools/setup_java.sh    - Install SDKMAN for Java"
-        echo "  ./tools/setup_python.sh  - Install uv for Python"
-        echo "  ./tools/setup_node.sh    - Install nvm for Node.js"
-        echo "  ./tools/setup_golang.sh  - Install Go"
-        echo "  ./tools/setup_bun.sh     - Install Bun (JavaScript runtime)"
-        echo "  ./tools/setup_nvim.sh    - Install Neovim with LazyVim"
-        echo "  ./tools/setup_git.sh     - Configure Git and SSH keys"
-    fi
-
-echo "Dotfiles installation complete!"
-if [ "$install_method" = "symlink" ]; then
-    echo "Using symlinks - changes in your home directory will affect the repository"
+# Ask if the user wants to install development tools
+if confirm "Do you want to set up development tools now?"; then
+    install_dev_tools
 else
-    echo "Using copies - changes in your home directory won't affect the repository"
+    log_info "You can set up development tools later by running individual scripts in tools/:"
+    log_kv "Git" "./tools/setup_git.sh"
+    log_kv "Java" "./tools/setup_java.sh"
+    log_kv "Python" "./tools/setup_python.sh"
+    log_kv "Node.js" "./tools/setup_node.sh"
+    log_kv "Bun" "./tools/setup_bun.sh"
+    log_kv "Go" "./tools/setup_golang.sh"
+    log_kv "Neovim" "./tools/setup_nvim.sh"
 fi
-echo "Your old configuration files have been backed up to $BACKUP_DIR"
-echo "Please log out and log back in to ensure all changes are applied."
+
+log_section "Installation Complete"
+if [ "$install_method" = "symlink" ]; then
+    log_success "Method: Symlinks (changes tracked)"
+else
+    log_success "Method: Copies (local changes only)"
+fi
+log_info "Backup location: $BACKUP_DIR"
+log_warn "Please log out and log back in to ensure all changes are applied."

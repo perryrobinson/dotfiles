@@ -132,9 +132,19 @@ log_error() {
 # ─────────────────────────────────────────────────────────────────────────────
 
 log_step() {
-    local num="$1" text="$2"
-    echo -e "${_C_BOLD_YELLOW}${_S_LINE}${_C_RESET}"
-    echo -e "${_C_BOLD_YELLOW}${_S_LINE} ${_C_BOLD}[${num}]${_C_RESET} $(_log_timestamp)${text}"
+    local num text
+    if [[ -z "$2" ]]; then
+        # Single argument: treat as text, no number
+        text="$1"
+        echo -e "${_C_BOLD_YELLOW}${_S_LINE}${_C_RESET}"
+        echo -e "${_C_BOLD_YELLOW}${_S_LINE} $(_log_timestamp)${text}"
+    else
+        # Two arguments: number and text
+        num="$1"
+        text="$2"
+        echo -e "${_C_BOLD_YELLOW}${_S_LINE}${_C_RESET}"
+        echo -e "${_C_BOLD_YELLOW}${_S_LINE} ${_C_BOLD}[${num}]${_C_RESET} $(_log_timestamp)${text}"
+    fi
 }
 
 log_detail() {

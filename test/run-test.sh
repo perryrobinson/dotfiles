@@ -1,5 +1,5 @@
-#!/bin/bash
-# run-test.sh
+#!/usr/bin/env bash
+set -euo pipefail
 
 # Go to the directory where the docker-compose.yml is located
 cd "$(dirname "$0")"
