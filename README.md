@@ -41,6 +41,7 @@ During installation, you'll be prompted to choose between two installation metho
   - Node.js: Uses nvm for version management. Also installs yarn and TypeScript.
   - Bun: JavaScript runtime and toolkit (alternative to Node.js).
   - Go: Installs Go directly from the official website.
+  - Rust: Uses rustup for toolchain management (rustc, cargo, clippy, rustfmt).
 
 - **Docker Support**: Optional installation of Docker and Docker Compose
 
@@ -67,6 +68,10 @@ source ~/.bashrc
 
 # For Go development
 ./tools/setup_golang.sh
+source ~/.bashrc
+
+# For Rust development
+./tools/setup_rust.sh
 source ~/.bashrc
 ```
 
@@ -154,6 +159,12 @@ bun --version  # Should display Bun version
 ./tools/setup_golang.sh
 source ~/.bashrc
 go version  # Should display Go version
+
+# Test Rust setup
+./tools/setup_rust.sh
+source ~/.bashrc
+rustc --version  # Should display Rust version
+cargo --version  # Should display Cargo version
 ```
 
 ### Verifying Tool Configurations
@@ -171,6 +182,7 @@ echo $PATH | grep nvm
 echo $PATH | grep ".bun/bin"        # Check for Bun
 echo $PATH | grep "/usr/local/go/bin" # Check for Go
 echo $PATH | grep "$HOME/go/bin"    # Check for Go's GOPATH bin
+echo $PATH | grep ".cargo/bin"      # Check for Rust/Cargo
 
 # Try installing a specific version of a tool
 sdk install java 17.0.8-tem
@@ -238,13 +250,15 @@ dotfiles/
 │       ├── python.sh       # uv configuration
 │       ├── node.sh         # nvm configuration
 │       ├── golang.sh       # Go configuration
-│       └── bun.sh          # Bun configuration
+│       ├── bun.sh          # Bun configuration
+│       └── rust.sh         # Rust/Cargo configuration
 ├── tools/                  # Setup scripts for development tools
 │   ├── setup_java.sh       # Installs SDKMAN and Java
 │   ├── setup_python.sh     # Installs uv and Python
 │   ├── setup_node.sh       # Installs nvm and Node.js
 │   ├── setup_golang.sh     # Installs Go
-│   └── setup_bun.sh        # Installs Bun
+│   ├── setup_bun.sh        # Installs Bun
+│   └── setup_rust.sh       # Installs Rust via rustup
 ├── test/                   # Docker-based testing environment
 │   ├── Dockerfile          # Test container definition
 │   ├── docker-compose.yml  # Container orchestration
