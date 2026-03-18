@@ -181,6 +181,11 @@ install_dev_tools() {
         bash "$DOTFILES_DIR/tools/setup_golang.sh"
     fi
 
+    # Install Rust
+    if confirm "Do you want to install Rust?"; then
+        bash "$DOTFILES_DIR/tools/setup_rust.sh"
+    fi
+
     # Install Neovim with LazyVim
     if confirm "Do you want to install Neovim with LazyVim?"; then
         bash "$DOTFILES_DIR/tools/setup_nvim.sh"
@@ -198,6 +203,7 @@ else
     log_kv "Node.js" "./tools/setup_node.sh"
     log_kv "Bun" "./tools/setup_bun.sh"
     log_kv "Go" "./tools/setup_golang.sh"
+    log_kv "Rust" "./tools/setup_rust.sh"
     log_kv "Neovim" "./tools/setup_nvim.sh"
 fi
 
