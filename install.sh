@@ -21,7 +21,7 @@ log_success "Created $BACKUP_DIR"
 
 # Backup existing files
 log_step 2 "Backing up existing configuration..."
-for file in .bashrc .bash_aliases .bash_functions .bash_paths .bash_logger; do
+for file in .bashrc .bash_aliases .bash_functions .bash_paths .bash_logger .tmux.conf; do
     if [ -f "$HOME/$file" ] || [ -L "$HOME/$file" ]; then
         log_detail "Backing up $HOME/$file"
         mv "$HOME/$file" "$BACKUP_DIR/"
@@ -71,6 +71,7 @@ install_files "$DOTFILES_DIR/bash/bash_aliases" "$HOME/.bash_aliases"
 install_files "$DOTFILES_DIR/bash/bash_functions" "$HOME/.bash_functions"
 install_files "$DOTFILES_DIR/bash/bash_paths" "$HOME/.bash_paths"
 install_files "$DOTFILES_DIR/bash/bash_logger" "$HOME/.bash_logger"
+install_files "$DOTFILES_DIR/config/tmux.conf" "$HOME/.tmux.conf"
 
 # Create secrets file from template if it doesn't exist
 if [ ! -f "$HOME/.bash_secrets" ]; then
