@@ -1,19 +1,34 @@
 #!/usr/bin/env bash
 set -euo pipefail
+cd "$(dirname "$0")/.."
 
-# Go to the directory where the docker-compose.yml is located
-cd "$(dirname "$0")"
+IMAGE_NAME="dotfiles-test"
 
-# Build and start the container
-docker compose up -d --build
-
-# Connect to the container and make scripts executable and cd into dotfiles directory
-docker compose exec dotfiles-test bash -c '
+docker build -f test/Dockerfile -t "$IMAGE_NAME" .
+docker run --rm -e DOTFILES_CI=1 "$IMAGE_NAME" bash -c '
+    set -euo pipefail
     cd ~/dotfiles
-    chmod +x install.sh
-    chmod +x tools/*.sh
+    chmod +x install.sh tools/*.sh
     ./install.sh
-'
 
-# When exiting the container, stop it, remove containers, networks, ALL images, orphans, AND named volumes
-docker compose down --rmi all --volumes --remove-orphans
+    echo "--- Smoke tests ---"
+    source ~/.bash_paths
+    for f in ~/.tool_configs/*.sh; do source "$f"; done
+
+    # Symlinks
+    test -L ~/.bashrc
+    test -L ~/.bash_aliases
+    test -L ~/.tmux.conf
+
+    # Dev tools
+    command -v java
+    command -v python3
+    command -v node
+    command -v bun
+    command -v go
+    command -v rustc
+    command -v nvim
+
+    echo "All smoke tests passed"
+'
+docker rmi "$IMAGE_NAME"
