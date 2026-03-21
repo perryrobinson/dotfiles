@@ -99,16 +99,25 @@ if [ ! -f "$ssh_key" ]; then
         
         # Test SSH connection to common Git hosts
         log_step 3 "Testing SSH connections..."
-        
+
+        # Add known host keys if not already present (avoids StrictHostKeyChecking=no)
+        mkdir -p "$ssh_dir"
+        if ! grep -q "^github.com " "$ssh_dir/known_hosts" 2>/dev/null; then
+            ssh-keyscan -t ed25519 github.com >> "$ssh_dir/known_hosts" 2>/dev/null
+        fi
+        if ! grep -q "^gitlab.com " "$ssh_dir/known_hosts" 2>/dev/null; then
+            ssh-keyscan -t ed25519 gitlab.com >> "$ssh_dir/known_hosts" 2>/dev/null
+        fi
+
         # Test GitHub
-        if ssh -T git@github.com -o ConnectTimeout=5 -o StrictHostKeyChecking=no 2>&1 | grep -q "successfully authenticated"; then
+        if ssh -T git@github.com -o ConnectTimeout=5 2>&1 | grep -q "successfully authenticated"; then
             log_success "GitHub SSH connection successful"
         else
             log_warn "GitHub SSH connection failed (this is normal if you haven't added the key yet)"
         fi
-        
+
         # Test GitLab
-        if ssh -T git@gitlab.com -o ConnectTimeout=5 -o StrictHostKeyChecking=no 2>&1 | grep -q "Welcome to GitLab"; then
+        if ssh -T git@gitlab.com -o ConnectTimeout=5 2>&1 | grep -q "Welcome to GitLab"; then
             log_success "GitLab SSH connection successful"
         else
             log_warn "GitLab SSH connection failed (this is normal if you haven't added the key yet)"
