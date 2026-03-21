@@ -38,7 +38,7 @@ During installation, you'll be prompted to choose between two installation metho
 - **Development Tools**: Setup scripts for popular development environments:
   - Java: Uses SDKMAN for version management TODO add maven and have it configured properly with sdkman.
   - Python: Uses uv for version management, virtual environments, and dependency management.
-  - Node.js: Uses nvm for version management. Also installs yarn and TypeScript.
+  - Node.js: Uses nvm for version management. Also installs pnpm and TypeScript.
   - Bun: JavaScript runtime and toolkit (alternative to Node.js).
   - Go: Installs Go directly from the official website.
   - Rust: Uses rustup for toolchain management (rustc, cargo, clippy, rustfmt).
@@ -147,7 +147,7 @@ python --version
 source ~/.bashrc
 nvm --version  # Should display nvm version
 npm --version
-yarn --version
+pnpm --version
 node --version
 
 # Test Bun setup
