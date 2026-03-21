@@ -132,15 +132,17 @@ if command -v apt-get &> /dev/null; then
             fi
         fi
         
-        # Install Docker Compose if not already installed
-        if ! command -v docker-compose &> /dev/null; then
-            if confirm "Do you want to install Docker Compose?"; then
-                # TODO: Don't pin docker-compose version
-                log_step 3 "Installing Docker Compose..."
-                sudo curl -L "https://github.com/docker/compose/releases/download/v2.20.3/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-                sudo chmod +x /usr/local/bin/docker-compose
-                log_success "Docker Compose installed"
+        # Docker Compose - modern Docker ships with 'docker compose' as a plugin
+        if docker compose version &> /dev/null; then
+            log_success "Docker Compose plugin already available: $(docker compose version --short)"
+        elif ! command -v docker-compose &> /dev/null; then
+            if confirm "Do you want to install the Docker Compose plugin?"; then
+                log_step 3 "Installing Docker Compose plugin..."
+                sudo apt-get install -y docker-compose-plugin
+                log_success "Docker Compose plugin installed"
             fi
+        else
+            log_info "Legacy docker-compose found: $(docker-compose --version)"
         fi
     fi
 fi
