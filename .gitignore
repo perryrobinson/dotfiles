@@ -34,3 +34,6 @@ __pycache__/
 
 # Docker test logs or temp files
 test/logs/
+
+# Neovim runtime data (lazy.nvim bootstraps itself, shada/log are local state)
+config/nvim/nvim/
