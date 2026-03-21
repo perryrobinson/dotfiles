@@ -44,6 +44,7 @@ IMAGE_NAME="dotfiles-test"
 
 docker build -f test/Dockerfile -t "$IMAGE_NAME" .
 docker run --rm -e DOTFILES_CI=1 "$IMAGE_NAME" bash -c '
+    set -euo pipefail
     cd ~/dotfiles
     chmod +x install.sh tools/*.sh
     ./install.sh
