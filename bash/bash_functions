@@ -8,30 +8,38 @@ mkcd() {
 
 # Extract various archive formats to a folder with the same name
 extract() {
-    if [ -f $1 ] ; then
-        # Get filename without extension
-        local dirname=$(basename "$1" | sed 's/\.[^.]*$//')
-        mkdir -p "$dirname" && cd "$dirname"
-        
-        case $1 in
-            *.tar.bz2)   tar xjf ../$1     ;;
-            *.tar.gz)    tar xzf ../$1     ;;
-            *.bz2)       bunzip2 ../$1     ;;
-            *.rar)       unrar e ../$1     ;;
-            *.gz)        gunzip ../$1      ;;
-            *.tar)       tar xf ../$1      ;;
-            *.tbz2)      tar xjf ../$1     ;;
-            *.tgz)       tar xzf ../$1     ;;
-            *.zip)       unzip ../$1       ;;
-            *.Z)         uncompress ../$1  ;;
-            *.7z)        7z x ../$1        ;;
-            *)           echo "'$1' cannot be extracted via extract()" ;;
-        esac
-        
-        cd ..
-    else
+    if [ ! -f "$1" ]; then
         echo "'$1' is not a valid file"
+        return 1
     fi
+
+    # Strip multi-part extensions properly (.tar.gz, .tar.bz2, etc.)
+    local base
+    base=$(basename "$1")
+    case "$base" in
+        *.tar.bz2|*.tar.gz|*.tar.xz) base="${base%.*.*}" ;;
+        *)                            base="${base%.*}"    ;;
+    esac
+
+    mkdir -p "$base" && cd "$base" || return 1
+
+    case "$1" in
+        *.tar.bz2)   tar xjf "../$1"     ;;
+        *.tar.gz)    tar xzf "../$1"     ;;
+        *.tar.xz)    tar xJf "../$1"     ;;
+        *.bz2)       bunzip2 "../$1"     ;;
+        *.rar)       unrar e "../$1"     ;;
+        *.gz)        gunzip "../$1"      ;;
+        *.tar)       tar xf "../$1"      ;;
+        *.tbz2)      tar xjf "../$1"     ;;
+        *.tgz)       tar xzf "../$1"     ;;
+        *.zip)       unzip "../$1"       ;;
+        *.Z)         uncompress "../$1"  ;;
+        *.7z)        7z x "../$1"        ;;
+        *)           echo "'$1' cannot be extracted via extract()" ;;
+    esac
+
+    cd ..
 }
 
 # Create a backup of a file with date
