@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Install Node.js ecosystem: nvm, Node.js, npm, Yarn, TypeScript
+# Install Node.js ecosystem: nvm, Node.js, npm, pnpm, TypeScript
 
 set -euo pipefail
 
@@ -33,16 +33,15 @@ get_latest_nvm_version() {
     fi
 }
 
-ensure_yarn() {
+ensure_pnpm() {
     if command -v corepack &> /dev/null; then
-        log_step "Enabling corepack for Yarn..."
+        log_step "Enabling corepack for pnpm..."
         corepack enable
-        # Explicitly prepare yarn to ensure it's installed and ready
-        log_detail "Preparing Yarn via corepack..."
-        corepack prepare yarn@stable --activate
+        log_detail "Preparing pnpm via corepack..."
+        corepack prepare pnpm@latest --activate
     else
-        log_info "Corepack not available, installing Yarn via npm..."
-        npm install -g yarn
+        log_info "Corepack not available, installing pnpm via npm..."
+        npm install -g pnpm
     fi
 }
 
@@ -87,13 +86,13 @@ else
 fi
 
 # =============================================================================
-# Yarn Setup (via corepack)
+# pnpm Setup (via corepack)
 # =============================================================================
 
-if ! command -v yarn &> /dev/null; then
-    ensure_yarn
+if ! command -v pnpm &> /dev/null; then
+    ensure_pnpm
 else
-    log_info "Yarn already installed: $(yarn --version)"
+    log_info "pnpm already installed: $(pnpm --version)"
 fi
 
 # =============================================================================
@@ -110,11 +109,9 @@ log_success "Node.js setup complete!"
 log_info "Node: $(node --version)"
 log_info "npm:  $(npm --version)"
 
-# Check Yarn and TSC versions outside of log_info to avoid subshell hangs/delays holding up the output
-YARN_VER="not installed"
-if command -v yarn &>/dev/null; then
-    # Use timeout to prevent hanging if yarn is still acting up
-    YARN_VER=$(timeout 2s yarn --version 2>/dev/null || echo "installed (version check timed out)")
+PNPM_VER="not installed"
+if command -v pnpm &>/dev/null; then
+    PNPM_VER=$(pnpm --version 2>/dev/null || echo "installed (version check failed)")
 fi
 
 TSC_VER="not installed"
@@ -122,7 +119,7 @@ if command -v tsc &>/dev/null; then
     TSC_VER=$(tsc --version)
 fi
 
-log_info "Yarn: $YARN_VER"
+log_info "pnpm: $PNPM_VER"
 log_info "tsc:  $TSC_VER"
 
 log_info "Run 'source ~/.bashrc' or start a new terminal to use nvm"

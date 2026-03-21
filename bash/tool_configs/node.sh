@@ -12,9 +12,10 @@ if [ -s "$NVM_DIR/nvm.sh" ]; then
 fi
 
 # =============================================================================
-# Yarn (standalone install at ~/.yarn)
+# pnpm
 # =============================================================================
-[ -d "$HOME/.yarn/bin" ] && export PATH="$HOME/.yarn/bin:$PATH"
-
-# Yarn global packages
-[ -d "$HOME/.config/yarn/global/node_modules/.bin" ] && export PATH="$HOME/.config/yarn/global/node_modules/.bin:$PATH"
+export PNPM_HOME="$HOME/.local/share/pnpm"
+case ":$PATH:" in
+  *":$PNPM_HOME:"*) ;;
+  *) [ -d "$PNPM_HOME" ] && export PATH="$PNPM_HOME:$PATH" ;;
+esac
