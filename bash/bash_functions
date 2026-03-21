@@ -39,24 +39,16 @@ backup() {
     cp "$1" "$1.bak.$(date +%Y%m%d%H%M%S)"
 }
 
-# dos2unix
+# dos2unix - convert line endings, skipping .git and binary files
 d2u() {
-    find . -type f -print0 | xargs -0 dos2unix
+    local target="${1:-.}"
+    find "$target" -type f \
+        -not -path '*/.git/*' \
+        -not -path '*/node_modules/*' \
+        -not -path '*/.venv/*' \
+        | while IFS= read -r file; do
+            if file "$file" | grep -q text; then
+                dos2unix "$file"
+            fi
+        done
 }
-
-# nvm auto use if .nvmrc is present
-nvm_auto_use() {
-  if [ -f .nvmrc ]; then
-    local nvmrc_node_version current_node_version
-    nvmrc_node_version=$(cat .nvmrc | tr -d 'v')
-    current_node_version=$(node --version 2>/dev/null | tr -d 'v')
-    if [[ "$current_node_version" != "$nvmrc_node_version" ]]; then
-      # Use --silent flag and redirect all output to /dev/null to suppress messages
-      nvm use --silent >/dev/null 2>&1
-    fi
-  fi
-}
-
-if [[ "$PROMPT_COMMAND" != *nvm_auto_use* ]]; then
-  PROMPT_COMMAND="nvm_auto_use;$PROMPT_COMMAND"
-fi
