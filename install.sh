@@ -122,27 +122,29 @@ if command -v apt-get &> /dev/null; then
             log_success "Default essential packages installed"
         fi
         
-        # Install Docker if not already installed
-        if ! command -v docker &> /dev/null; then
-            if confirm "Do you want to install Docker?"; then
-                log_step 2 "Installing Docker..."
-                curl -fsSL https://get.docker.com | sh
-                sudo usermod -aG docker "$USER"
-                log_warn "You may need to log out and back in for Docker permissions to take effect"
+        # Install Docker if not already installed (skip in CI — no systemd in containers)
+        if [[ "${DOTFILES_CI:-}" != "1" ]]; then
+            if ! command -v docker &> /dev/null; then
+                if confirm "Do you want to install Docker?"; then
+                    log_step 2 "Installing Docker..."
+                    curl -fsSL https://get.docker.com | sh
+                    sudo usermod -aG docker "$USER"
+                    log_warn "You may need to log out and back in for Docker permissions to take effect"
+                fi
             fi
-        fi
-        
-        # Docker Compose - modern Docker ships with 'docker compose' as a plugin
-        if docker compose version &> /dev/null; then
-            log_success "Docker Compose plugin already available: $(docker compose version --short)"
-        elif ! command -v docker-compose &> /dev/null; then
-            if confirm "Do you want to install the Docker Compose plugin?"; then
-                log_step 3 "Installing Docker Compose plugin..."
-                sudo apt-get install -y docker-compose-plugin
-                log_success "Docker Compose plugin installed"
+
+            # Docker Compose - modern Docker ships with 'docker compose' as a plugin
+            if docker compose version &> /dev/null; then
+                log_success "Docker Compose plugin already available: $(docker compose version --short)"
+            elif ! command -v docker-compose &> /dev/null; then
+                if confirm "Do you want to install the Docker Compose plugin?"; then
+                    log_step 3 "Installing Docker Compose plugin..."
+                    sudo apt-get install -y docker-compose-plugin
+                    log_success "Docker Compose plugin installed"
+                fi
+            else
+                log_info "Legacy docker-compose found: $(docker-compose --version)"
             fi
-        else
-            log_info "Legacy docker-compose found: $(docker-compose --version)"
         fi
     fi
 fi
