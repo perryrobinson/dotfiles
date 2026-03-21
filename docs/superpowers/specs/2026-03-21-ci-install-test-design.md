@@ -40,14 +40,17 @@ Replace the current `docker compose` approach with plain `docker build` + `docke
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-docker build -f test/Dockerfile -t dotfiles-test .
-docker run --rm -e DOTFILES_CI=1 dotfiles-test bash -c '
+IMAGE_NAME="dotfiles-test"
+
+docker build -f test/Dockerfile -t "$IMAGE_NAME" .
+docker run --rm -e DOTFILES_CI=1 "$IMAGE_NAME" bash -c '
     cd ~/dotfiles
     chmod +x install.sh tools/*.sh
     ./install.sh
 
     echo "--- Smoke tests ---"
-    source ~/.bashrc
+    source ~/.bash_paths
+    for f in ~/.tool_configs/*.sh; do source "$f"; done
 
     # Symlinks
     test -L ~/.bashrc
@@ -65,13 +68,20 @@ docker run --rm -e DOTFILES_CI=1 dotfiles-test bash -c '
 
     echo "All smoke tests passed"
 '
+docker rmi "$IMAGE_NAME"
 ```
+
+Note: smoke tests source `~/.bash_paths` and `~/.tool_configs/*.sh` directly instead of `~/.bashrc`, because bashrc has an interactive-shell guard (`case $- in *i*) ...`) that causes it to return early in non-interactive `bash -c` shells.
 
 ### 3. `test/docker-compose.yml` — deleted
 
 No longer needed. The compose file only served `run-test.sh`, which now uses plain Docker commands. Removes the Docker Compose dependency from the test workflow.
 
-### 4. `.github/workflows/test.yml` — new file
+### 4. `test/Dockerfile` — unchanged
+
+The existing Dockerfile (Ubuntu 22.04, testuser with sudo, copies dotfiles in) works as-is. No modifications needed.
+
+### 5. `.github/workflows/test.yml` — new file
 
 ```yaml
 name: Test Install
