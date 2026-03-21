@@ -67,19 +67,19 @@ if ! sudo make install >/dev/null; then
 fi
 
 # --- Configuration Setup ---
-log_step "Creating Neovim tool config file..."
+log_step "Verifying Neovim tool config..."
 mkdir -p "$TOOL_CONFIG_DIR"
-cat >"$TOOL_CONFIG_FILE" <<EOF
-#!/usr/bin/env bash
-# Neovim configuration (managed by dotfiles setup)
 
-# Add Neovim to the PATH
-export PATH="$INSTALL_PREFIX/bin:\$PATH"
-
-# Aliases for Neovim
-alias vi="nvim"
-alias vim="nvim"
-EOF
+# If the tool config is a symlink (from install.sh symlink mode), leave it alone.
+# The version-controlled bash/tool_configs/nvim.sh is the source of truth.
+if [ -L "$TOOL_CONFIG_FILE" ]; then
+    log_info "Tool config is symlinked — using version-controlled config"
+elif [ -f "$DOTFILES_DIR/bash/tool_configs/nvim.sh" ]; then
+    cp "$DOTFILES_DIR/bash/tool_configs/nvim.sh" "$TOOL_CONFIG_FILE"
+    log_success "Copied tool config to $TOOL_CONFIG_FILE"
+else
+    log_warn "No nvim.sh tool config found in dotfiles repo"
+fi
 
 # --- User Config Backup & Symlink ---
 if [ -e "$NEOVIM_CONFIG_DIR" ] || [ -L "$NEOVIM_CONFIG_DIR" ]; then
