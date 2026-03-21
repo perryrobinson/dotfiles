@@ -2,10 +2,7 @@
 # Python configuration with uv
 # uv handles Python versions, virtual environments, and package management
 
-# Add uv and uv-managed tools to PATH
-if [ -d "$HOME/.local/bin" ]; then
-    export PATH="$HOME/.local/bin:$PATH"
-fi
+# Note: $HOME/.local/bin is added in bash_paths — no need to duplicate here
 
 # Enable uv shell completion (optional, improves tab completion)
 if command -v uv &> /dev/null; then
