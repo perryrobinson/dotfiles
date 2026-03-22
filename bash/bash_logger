@@ -133,7 +133,7 @@ log_error() {
 
 log_step() {
     local num text
-    if [[ -z "$2" ]]; then
+    if [[ -z "${2:-}" ]]; then
         # Single argument: treat as text, no number
         text="$1"
         echo -e "${_C_BOLD_YELLOW}${_S_LINE}${_C_RESET}"
