@@ -17,32 +17,38 @@ fi
 log_step 1 "Setting up Git configuration..."
 
 # --- Get user information ---
-log_info "Please provide your Git configuration details:"
-
-# Get name
-current_name=$(git config --global user.name 2>/dev/null || echo "")
-if [ -n "$current_name" ]; then
-    read -p "Git user name (current: $current_name): " git_name
-    git_name=${git_name:-$current_name}
+if [[ "${DOTFILES_CI:-}" == "1" ]]; then
+    git_name="CI Test User"
+    git_email="ci@test.local"
+    log_info "CI mode: using dummy Git identity"
 else
-    read -p "Git user name: " git_name
-    while [ -z "$git_name" ]; do
-        log_warn "Name cannot be empty."
+    log_info "Please provide your Git configuration details:"
+
+    # Get name
+    current_name=$(git config --global user.name 2>/dev/null || echo "")
+    if [ -n "$current_name" ]; then
+        read -p "Git user name (current: $current_name): " git_name
+        git_name=${git_name:-$current_name}
+    else
         read -p "Git user name: " git_name
-    done
-fi
+        while [ -z "$git_name" ]; do
+            log_warn "Name cannot be empty."
+            read -p "Git user name: " git_name
+        done
+    fi
 
-# Get email
-current_email=$(git config --global user.email 2>/dev/null || echo "")
-if [ -n "$current_email" ]; then
-    read -p "Git user email (current: $current_email): " git_email
-    git_email=${git_email:-$current_email}
-else
-    read -p "Git user email: " git_email
-    while [ -z "$git_email" ]; do
-        log_warn "Email cannot be empty."
+    # Get email
+    current_email=$(git config --global user.email 2>/dev/null || echo "")
+    if [ -n "$current_email" ]; then
+        read -p "Git user email (current: $current_email): " git_email
+        git_email=${git_email:-$current_email}
+    else
         read -p "Git user email: " git_email
-    done
+        while [ -z "$git_email" ]; do
+            log_warn "Email cannot be empty."
+            read -p "Git user email: " git_email
+        done
+    fi
 fi
 
 # --- Set git configuration ---
@@ -94,8 +100,10 @@ if [ ! -f "$ssh_key" ]; then
         log_kv "GitLab" "https://gitlab.com/-/profile/keys"
         log_kv "Bitbucket" "https://bitbucket.org/account/settings/ssh-keys/"
         
-        echo
-        read -p "Press Enter after you've added the key to your Git hosting service..."
+        if [[ "${DOTFILES_CI:-}" != "1" ]]; then
+            echo
+            read -p "Press Enter after you've added the key to your Git hosting service..."
+        fi
         
         # Test SSH connection to common Git hosts
         log_step 3 "Testing SSH connections..."
