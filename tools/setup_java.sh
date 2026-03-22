@@ -8,7 +8,7 @@ DOTFILES_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 source "$DOTFILES_DIR/tools/common.sh"
 
 # --- Configuration ---
-JAVA_VERSION="21.0.3-tem" # Specify a recent Long-Term Support (LTS) version
+JAVA_VERSION="21.0.10-tem" # Specify a recent Long-Term Support (LTS) version
 MAVEN_VERSION=""          # Let SDKMAN install the latest stable version
 
 log_header "Java Environment Setup"
@@ -43,6 +43,8 @@ fi
 # Source SDKMAN to ensure its commands are available
 set +u
 source "$HOME/.sdkman/bin/sdkman-init.sh"
+# Auto-answer prompts in CI to avoid hanging on interactive questions
+[[ "${DOTFILES_CI:-}" == "1" ]] && sdkman_auto_answer=true
 set -u
 
 log_section "Java & Maven"
