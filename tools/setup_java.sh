@@ -8,7 +8,7 @@ DOTFILES_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 source "$DOTFILES_DIR/tools/common.sh"
 
 # --- Configuration ---
-JAVA_VERSION="21.0.3-tem" # Specify a recent Long-Term Support (LTS) version
+JAVA_VERSION="21.0.10-tem" # Specify a recent Long-Term Support (LTS) version
 MAVEN_VERSION=""          # Let SDKMAN install the latest stable version
 
 log_header "Java Environment Setup"
@@ -41,14 +41,15 @@ else
 fi
 
 # Source SDKMAN to ensure its commands are available
+# SDKMAN uses unset variables internally, so disable strict unset checking
 set +u
 source "$HOME/.sdkman/bin/sdkman-init.sh"
-set -u
+# Auto-answer prompts in CI to avoid hanging on interactive questions
+[[ "${DOTFILES_CI:-}" == "1" ]] && sdkman_auto_answer=true
 
 log_section "Java & Maven"
 
 # Install specified Java version if not already present
-# Using 'sdk home' to check if version exists is more reliable than parsing 'sdk list'
 if ! sdk home java "$JAVA_VERSION" >/dev/null 2>&1; then
     log_step 3 "Installing Java version $JAVA_VERSION..."
     sdk install java "$JAVA_VERSION"
@@ -61,7 +62,6 @@ fi
 sdk default java "$JAVA_VERSION" >/dev/null 2>&1 || true
 
 # Install latest Maven if not already present
-# Check if mvn is in path (after sdkman init)
 if ! command -v mvn >/dev/null; then
     log_step 4 "Installing latest stable Maven..."
     sdk install maven "$MAVEN_VERSION"
@@ -74,3 +74,4 @@ log_section "Setup Complete"
 log_info "Current active versions:"
 log_kv "Java"  "$(sdk current java)"
 log_kv "Maven" "$(sdk current maven)"
+set -u

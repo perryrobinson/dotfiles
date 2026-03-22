@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Install Node.js ecosystem: nvm, Node.js, npm, pnpm, TypeScript
 
-set -euo pipefail
+set -eo pipefail
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 DOTFILES_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
@@ -13,9 +13,7 @@ source "$DOTFILES_DIR/tools/common.sh"
 
 load_nvm() {
     export NVM_DIR="$HOME/.nvm"
-    set +u
     [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-    set -u
 }
 
 get_latest_nvm_version() {
@@ -123,3 +121,4 @@ log_info "pnpm: $PNPM_VER"
 log_info "tsc:  $TSC_VER"
 
 log_info "Run 'source ~/.bashrc' or start a new terminal to use nvm"
+set -u
