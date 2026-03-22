@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Install Node.js ecosystem: nvm, Node.js, npm, pnpm, TypeScript
 
-set -euo pipefail
+set -eo pipefail
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 DOTFILES_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
@@ -13,8 +13,6 @@ source "$DOTFILES_DIR/tools/common.sh"
 
 load_nvm() {
     export NVM_DIR="$HOME/.nvm"
-    # nvm uses unset variables internally, so disable strict unset checking
-    set +u
     [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 }
 
