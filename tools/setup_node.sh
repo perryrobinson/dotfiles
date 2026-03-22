@@ -13,9 +13,9 @@ source "$DOTFILES_DIR/tools/common.sh"
 
 load_nvm() {
     export NVM_DIR="$HOME/.nvm"
+    # nvm uses unset variables internally, so disable strict unset checking
     set +u
     [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-    set -u
 }
 
 get_latest_nvm_version() {
@@ -123,3 +123,4 @@ log_info "pnpm: $PNPM_VER"
 log_info "tsc:  $TSC_VER"
 
 log_info "Run 'source ~/.bashrc' or start a new terminal to use nvm"
+set -u
