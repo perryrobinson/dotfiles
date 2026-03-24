@@ -8,7 +8,7 @@ if [ -d "/usr/local/go/bin" ]; then
 fi
 
 # Set GOPATH to the default location if it's not already set
-if [ -z "$GOPATH" ]; then
+if [ -z "${GOPATH:-}" ]; then
     export GOPATH="$HOME/go"
 fi
 

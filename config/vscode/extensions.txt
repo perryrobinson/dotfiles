@@ -17,6 +17,7 @@ ms-python.python
 peakchen90.open-html-in-browser
 redhat.java
 rogalmic.bash-debug
+timonwong.shellcheck
 visualstudioexptteam.intellicode-api-usage-examples
 visualstudioexptteam.vscodeintellicode
 vscjava.vscode-gradle

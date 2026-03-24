@@ -133,7 +133,7 @@ log_error() {
 
 log_step() {
     local num text
-    if [[ -z "$2" ]]; then
+    if [[ -z "${2:-}" ]]; then
         # Single argument: treat as text, no number
         text="$1"
         echo -e "${_C_BOLD_YELLOW}${_S_LINE}${_C_RESET}"
@@ -183,6 +183,7 @@ require_cmd() {
 # Prompt for yes/no confirmation (reads from /dev/tty to work when stdin is piped)
 confirm() {
     local prompt="${1:-Continue?}" default="${2:-y}"
+    [[ "${DOTFILES_CI:-}" == "1" ]] && return $([[ "$default" == "y" ]] && echo 0 || echo 1)
     local hint=$([[ "$default" == "y" ]] && echo "Y/n" || echo "y/N")
 
     echo -en "${_C_YELLOW}${_S_LINE} ${_S_WARN}  ${prompt} [${hint}] ${_C_RESET}"

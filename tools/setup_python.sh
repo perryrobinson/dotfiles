@@ -40,8 +40,8 @@ log_section "Python Environment"
 
 # Install a default Python version
 log_step 2 "Installing Python 3.12..."
-uv python install 3.12
-log_success "Python 3.12 installed"
+uv python install 3.12 --default
+log_success "Python 3.12 installed (python3 available on PATH)"
 
 # Set Python 3.12 as the default
 log_step 3 "Pinning Python 3.12 as global default..."
