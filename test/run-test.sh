@@ -41,10 +41,13 @@ docker run --rm -e DOTFILES_CI=1 "${IMAGE_NAME}:installed" bash -c '
     }
 
     # Source tool configs the same way bashrc does (without interactive guard)
+    # Disable set -u: third-party scripts (SDKMAN, nvm) use unbound variables
+    set +u
     source ~/.bash_paths 2>/dev/null || true
     for f in ~/.tool_configs/*.sh; do
         [ -f "$f" ] && source "$f"
     done
+    set -u
 
     echo "--- Symlinks ---"
     check "~/.bashrc is a symlink"       test -L ~/.bashrc
