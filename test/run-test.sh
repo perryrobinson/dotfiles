@@ -75,6 +75,7 @@ docker run --rm -e DOTFILES_CI=1 "${IMAGE_NAME}:installed" bash -c '
     check "rustc runs"   rustc --version
     check "java runs"    java -version
     check "bun runs"     bun --version
+    check "pnpm runs"    pnpm --version
 
     echo "--- Node visible to subprocesses ---"
     check "node found by env"  env which node
