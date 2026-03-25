@@ -51,11 +51,6 @@ if [ -s "$NVM_DIR/nvm.sh" ]; then
     }
 fi
 
-# =============================================================================
-# pnpm
-# =============================================================================
-export PNPM_HOME="$HOME/.local/share/pnpm"
-case ":$PATH:" in
-  *":$PNPM_HOME:"*) ;;
-  *) [ -d "$PNPM_HOME" ] && export PATH="$PNPM_HOME:$PATH" ;;
-esac
+# pnpm is provided by corepack via the default node installation above.
+# No separate PNPM_HOME or PATH entry needed — the corepack shim lives
+# in the same bin directory as node/npm/npx.

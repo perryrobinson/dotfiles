@@ -32,15 +32,14 @@ get_latest_nvm_version() {
 }
 
 ensure_pnpm() {
-    if command -v corepack &> /dev/null; then
-        log_step "Enabling corepack for pnpm..."
-        corepack enable
-        log_detail "Preparing pnpm via corepack..."
-        corepack prepare pnpm@latest --activate
-    else
-        log_info "Corepack not available, installing pnpm via npm..."
-        npm install -g pnpm
+    if ! command -v corepack &> /dev/null; then
+        log_error "corepack not found — it ships with Node 16.9+. Check your node installation."
+        return 1
     fi
+    log_step "Enabling corepack for pnpm..."
+    corepack enable
+    log_detail "Preparing pnpm@latest via corepack..."
+    corepack prepare pnpm@latest --activate
 }
 
 ensure_typescript() {
@@ -72,26 +71,27 @@ load_nvm
 # Node.js Installation
 # =============================================================================
 
-if ! command -v node &> /dev/null; then
-    log_step 2 "Installing Node.js LTS..."
-    nvm install --lts
-    nvm use --lts
+NODE_MAJOR=24
 
-    log_step 3 "Updating npm to latest..."
-    npm install -g npm@latest
+if ! nvm ls "$NODE_MAJOR" &> /dev/null; then
+    log_step 2 "Installing Node.js $NODE_MAJOR..."
+    nvm install "$NODE_MAJOR"
 else
-    log_info "Node.js already installed: $(node --version)"
+    log_info "Node.js $NODE_MAJOR already installed: $(node --version)"
 fi
+
+log_step 3 "Setting Node.js $NODE_MAJOR as default..."
+nvm alias default "$NODE_MAJOR"
+nvm use "$NODE_MAJOR"
+
+log_detail "Updating npm to latest..."
+npm install -g npm@latest
 
 # =============================================================================
 # pnpm Setup (via corepack)
 # =============================================================================
 
-if ! command -v pnpm &> /dev/null; then
-    ensure_pnpm
-else
-    log_info "pnpm already installed: $(pnpm --version)"
-fi
+ensure_pnpm
 
 # =============================================================================
 # TypeScript
