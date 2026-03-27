@@ -5,13 +5,16 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 IMAGE_NAME="dotfiles-test"
 
+# Source bash_logger for styled output
+source "$REPO_DIR/bash/bash_logger"
+
 cleanup() { docker rmi -f "$IMAGE_NAME" 2>/dev/null || true; }
 trap cleanup EXIT
 
-echo "==> Building test image..."
+log_header "Building test image"
 docker build -t "$IMAGE_NAME" -f "$SCRIPT_DIR/Dockerfile" "$REPO_DIR"
 
-echo "==> Running install..."
+log_header "Running install"
 docker run --name "${IMAGE_NAME}-run" \
     -e DOTFILES_CI=1 \
     "$IMAGE_NAME" \
@@ -22,20 +25,25 @@ docker run --name "${IMAGE_NAME}-run" \
     '
 
 # Commit the installed state so smoke tests run against it
+log_info "Committing installed container state"
 docker commit "${IMAGE_NAME}-run" "${IMAGE_NAME}:installed" >/dev/null
 docker rm "${IMAGE_NAME}-run" >/dev/null
 
-echo "==> Running smoke tests..."
+log_header "Running smoke tests"
 docker run --rm -e DOTFILES_CI=1 "${IMAGE_NAME}:installed" bash -c '
     set -euo pipefail
+
+    # Source bash_logger inside the container
+    source ~/dotfiles/bash/bash_logger
+
     FAIL=0
 
     check() {
         local desc="$1"; shift
         if "$@" >/dev/null 2>&1; then
-            echo "  PASS: $desc"
+            log_success "$desc"
         else
-            echo "  FAIL: $desc"
+            log_error "$desc"
             FAIL=1
         fi
     }
@@ -50,12 +58,12 @@ docker run --rm -e DOTFILES_CI=1 "${IMAGE_NAME}:installed" bash -c '
     done
     set -eu
 
-    echo "--- Symlinks ---"
+    log_section "Symlinks"
     check "~/.bashrc is a symlink"       test -L ~/.bashrc
     check "~/.bash_aliases is a symlink"  test -L ~/.bash_aliases
     check "~/.tmux.conf is a symlink"     test -L ~/.tmux.conf
 
-    echo "--- Tools on PATH ---"
+    log_section "Tools on PATH"
     check "node is on PATH"    command -v node
     check "npm is on PATH"     command -v npm
     check "npx is on PATH"     command -v npx
@@ -66,8 +74,9 @@ docker run --rm -e DOTFILES_CI=1 "${IMAGE_NAME}:installed" bash -c '
     check "bun is on PATH"     command -v bun
     check "nvim is on PATH"    command -v nvim
     check "pnpm is on PATH"    command -v pnpm
+    check "uv is on PATH"      command -v uv
 
-    echo "--- Tools actually work ---"
+    log_section "Tools actually work"
     check "node runs"    node --version
     check "npm runs"     npm --version
     check "python3 runs" python3 --version
@@ -76,17 +85,18 @@ docker run --rm -e DOTFILES_CI=1 "${IMAGE_NAME}:installed" bash -c '
     check "java runs"    java -version
     check "bun runs"     bun --version
     check "pnpm runs"    pnpm --version
+    check "uv runs"      uv --version
 
-    echo "--- Node visible to subprocesses ---"
+    log_section "Node visible to subprocesses"
     check "node found by env"  env which node
     check "node works in bash -c" bash -c "node --version"
 
     if [ "$FAIL" -ne 0 ]; then
-        echo "SMOKE TESTS FAILED"
+        log_error "SMOKE TESTS FAILED"
         exit 1
     fi
-    echo "ALL SMOKE TESTS PASSED"
+    log_success "ALL SMOKE TESTS PASSED"
 '
 
 docker rmi -f "${IMAGE_NAME}:installed" 2>/dev/null || true
-echo "==> Done."
+log_header "Done"
