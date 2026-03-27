@@ -164,7 +164,6 @@ dotfiles/
 │   ├── bash_logger             # Logging library for scripts
 │   └── tool_configs/           # Tool-specific configurations
 │       ├── bun.sh              # Bun configuration
-│       ├── completions.sh      # Shell completions (git, docker, npm, kubectl)
 │       ├── golang.sh           # Go configuration
 │       ├── java.sh             # SDKMAN configuration
 │       ├── node.sh             # nvm lazy-loading and Node.js PATH
