@@ -118,7 +118,7 @@ if command -v apt-get &> /dev/null; then
             fi
         else
             # Fallback if file doesn't exist
-            sudo apt-get install -y build-essential curl wget git htop jq zip unzip net-tools tree dos2unix
+            sudo apt-get install -y build-essential curl wget git htop jq zip unzip net-tools tree ripgrep
             log_success "Default essential packages installed"
         fi
         

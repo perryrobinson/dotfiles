@@ -30,7 +30,6 @@ if command -v npm &> /dev/null; then
     [ -f ~/.npm_completion ] && source ~/.npm_completion
 fi
 
-
 # kubectl completion (if kubectl is installed)
 if command -v kubectl &> /dev/null; then
     if [ ! -f ~/.kubectl_completion ]; then
