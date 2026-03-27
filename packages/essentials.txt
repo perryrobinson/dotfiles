@@ -9,3 +9,5 @@ zip
 net-tools
 tree
 ripgrep
+dos2unix
+just
