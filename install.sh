@@ -109,17 +109,14 @@ if command -v apt-get &> /dev/null; then
         sudo apt-get update >/dev/null
         
         # Read packages from essentials.txt file
-        log_detail "Installing packages..."
-        if [ -f "$DOTFILES_DIR/packages/essentials.txt" ]; then
-            if xargs sudo apt-get install -y < "$DOTFILES_DIR/packages/essentials.txt"; then
-                log_success "Essential packages installed"
-            else
-                log_error "Failed to install some packages"
-            fi
+        log_detail "Installing packages from packages/essentials.txt..."
+        if [ ! -f "$DOTFILES_DIR/packages/essentials.txt" ]; then
+            die "packages/essentials.txt not found — dotfiles repo may be incomplete"
+        fi
+        if xargs sudo apt-get install -y < "$DOTFILES_DIR/packages/essentials.txt"; then
+            log_success "Essential packages installed"
         else
-            # Fallback if file doesn't exist
-            sudo apt-get install -y build-essential curl wget git htop jq zip unzip net-tools tree dos2unix
-            log_success "Default essential packages installed"
+            log_error "Failed to install some packages"
         fi
         
         # Install Docker if not already installed (skip in CI — no systemd in containers)
