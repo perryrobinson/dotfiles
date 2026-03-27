@@ -43,7 +43,7 @@ During installation, you'll be prompted to choose between two installation metho
   - Bun: JavaScript runtime and toolkit (alternative to Node.js).
   - Go: Installs Go directly from the official website.
   - Rust: Uses rustup for toolchain management (rustc, cargo, clippy, rustfmt).
-  - Neovim: Builds from source with LazyVim configuration.
+  - Neovim: Builds from source with LazyVim configuration. See [top Neovim configs](https://dotfyle.com/neovim/configurations/top) for inspiration.
 
 - **Docker Support**: Optional installation of Docker and Docker Compose
 
@@ -208,60 +208,3 @@ git pull
 ```
 
 This will update your configuration while preserving your personal settings in `.bash_secrets`.
-
-## uv Quick Reference
-
-uv is used for Python version management, virtual environments, and dependency management.
-
-### Python Version Management
-
-```bash
-uv python list              # List available versions
-uv python install 3.12      # Install a version
-uv python pin 3.12          # Pin version for current project
-uv python pin 3.12 --global # Pin global default version
-```
-
-### Project Management
-
-```bash
-uv init                     # Create new project (pyproject.toml)
-uv add requests pandas      # Add dependencies
-uv add --dev pytest ruff    # Add dev dependencies
-uv sync                     # Install all dependencies
-uv run python script.py     # Run with project dependencies
-uv run pytest               # Run tools with project deps
-```
-
-### Virtual Environments
-
-```bash
-uv venv                     # Create .venv in current directory
-uv venv --python 3.11       # Create with specific Python version
-source .venv/bin/activate   # Activate (or let uv run handle it)
-```
-
-### CLI Tools (replaces pipx)
-
-```bash
-uv tool install ruff        # Install CLI tool globally
-uv tool install black
-uv tool list                # List installed tools
-uv tool upgrade ruff        # Upgrade a tool
-```
-
-### Lambda Deployment
-
-uv produces standard artifacts compatible with Lambda:
-
-```bash
-uv export --format requirements-txt > requirements.txt
-uv pip install -r requirements.txt --target ./package
-cd package && zip -r ../deployment.zip .
-```
-
-## Next Steps
-
-### Neovim
-
-https://dotfyle.com/neovim/configurations/top
