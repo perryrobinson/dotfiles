@@ -6,6 +6,8 @@
 - Keep edits scoped to the requested behavior. Avoid unrelated refactors and dependency churn.
 - If the worktree already has changes, treat them as user work and do not revert them unless explicitly asked.
 - Prefer small, reviewable changes with focused verification over broad rewrites.
+- Commit frequently at discrete logical milestones when working on a branch.
+- Use Conventional Commits for all commit messages, for example `feat: add user onboarding`, `fix: handle missing config`, or `docs: update setup notes`.
 
 ## Toolchains
 
