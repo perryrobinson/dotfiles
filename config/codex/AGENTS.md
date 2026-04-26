@@ -23,7 +23,7 @@ Read these opinionated global steering docs only when the task touches the relev
 - Docker on WSL: `~/dotfiles/config/codex/steering/docker-wsl.md`
 - Frontend application work: `~/dotfiles/config/codex/steering/frontend.md`
 
-Do not read every steering doc by default.
+Do not read every steering doc by default. Steering docs include frontmatter; use `applies_when` and `tags` as routing hints. Direct user instructions and repo-local `AGENTS.md` files override these global docs.
 
 ## Toolchains
 

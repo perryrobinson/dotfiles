@@ -1,3 +1,22 @@
+---
+title: Frontend Steering
+description: Opinionated defaults for frontend app architecture, routing, data fetching, validation, and styling.
+applies_when:
+  - Frontend app setup
+  - SPA architecture or routing work
+  - React feature organization
+  - Frontend styling decisions
+tags:
+  - frontend
+  - react
+  - spa
+  - vite
+  - tanstack-router
+  - tanstack-query
+  - zod
+  - css
+---
+
 # Frontend Steering
 
 - Build the actual usable application experience first, not a marketing landing page, unless the user explicitly asks for a landing page.

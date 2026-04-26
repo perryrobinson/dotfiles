@@ -1,3 +1,17 @@
+---
+title: Codegen Steering
+description: Opinionated defaults for generated code and freshness checks.
+applies_when:
+  - Generated code changes
+  - OpenAPI, protobuf, route tree, or API client updates
+  - Codegen drift or freshness checks
+tags:
+  - codegen
+  - generated-code
+  - openapi
+  - protobuf
+---
+
 # Codegen Steering
 
 - Treat generated code as derived output.

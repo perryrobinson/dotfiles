@@ -1,3 +1,18 @@
+---
+title: Git Steering
+description: Opinionated defaults for branches, commits, staging, and PR-oriented work.
+applies_when:
+  - Git commits
+  - Branch or PR work
+  - Staging files
+  - Publishing changes
+tags:
+  - git
+  - conventional-commits
+  - branches
+  - pull-requests
+---
+
 # Git Steering
 
 - Commit frequently at discrete logical milestones when working on a branch.

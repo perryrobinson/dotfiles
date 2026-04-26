@@ -1,3 +1,17 @@
+---
+title: Monorepo Steering
+description: Opinionated defaults for workspace-oriented repositories and build orchestration.
+applies_when:
+  - Monorepo setup or maintenance
+  - Nx, just, or workspace command changes
+  - Cross-package checks or affected-project workflows
+tags:
+  - monorepo
+  - nx
+  - just
+  - workspaces
+---
+
 # Monorepo Steering
 
 - Prefer a single command runner as the front door when a repo provides one, especially `just`.

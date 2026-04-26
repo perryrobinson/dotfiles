@@ -1,3 +1,16 @@
+---
+title: Go Steering
+description: Opinionated defaults for Go modules, workspaces, tests, vetting, and protobuf tooling.
+applies_when:
+  - Go project changes
+  - Go tests or vetting
+  - Go protobuf generation
+tags:
+  - go
+  - protobuf
+  - buf
+---
+
 # Go Steering
 
 - Use the repo's Go workspace or module files as the source of truth.

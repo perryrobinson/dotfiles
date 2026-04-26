@@ -1,3 +1,22 @@
+---
+title: Python Steering
+description: Opinionated defaults for Python projects, uv workspaces, APIs, dataframes, and shared packages.
+applies_when:
+  - Python project setup
+  - Python package changes
+  - Python API work
+  - Dataframe or ETL work
+  - Python shared package design
+tags:
+  - python
+  - uv
+  - ruff
+  - ty
+  - fastapi
+  - pydantic
+  - polars
+---
+
 # Python Steering
 
 - Use `uv` for dependency management, virtual environments, scripts, and workspaces.

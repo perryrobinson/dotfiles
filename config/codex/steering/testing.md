@@ -1,3 +1,19 @@
+---
+title: Testing and Verification Steering
+description: Opinionated defaults for choosing and reporting verification commands.
+applies_when:
+  - Running tests
+  - Running lint, format, or typecheck
+  - Verifying codegen freshness
+  - Reporting verification status
+tags:
+  - testing
+  - verification
+  - linting
+  - typechecking
+  - codegen
+---
+
 # Testing and Verification Steering
 
 - Run the narrowest relevant formatter, typecheck, lint, and tests after code changes.

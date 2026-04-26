@@ -1,3 +1,15 @@
+---
+title: Codex Steering Index
+description: Explains how global Codex steering docs are organized and when to use them.
+applies_when:
+  - Navigating global steering docs
+  - Deciding whether to add a steering doc or a skill
+tags:
+  - codex
+  - steering
+  - index
+---
+
 # Codex Steering
 
 These files hold opinionated global defaults for how work should be done on this machine.

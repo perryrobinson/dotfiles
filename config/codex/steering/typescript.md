@@ -1,3 +1,21 @@
+---
+title: TypeScript Steering
+description: Opinionated defaults for TypeScript and JavaScript workspaces, SPAs, Biome, and generated TypeScript.
+applies_when:
+  - TypeScript or JavaScript project changes
+  - pnpm workspace work
+  - Vite or TanStack Router work
+  - Biome linting or formatting
+  - Generated TypeScript updates
+tags:
+  - typescript
+  - javascript
+  - pnpm
+  - biome
+  - vite
+  - tanstack-router
+---
+
 # TypeScript Steering
 
 - Prefer `pnpm` and respect pnpm workspaces.

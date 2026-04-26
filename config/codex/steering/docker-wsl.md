@@ -1,3 +1,16 @@
+---
+title: Docker and WSL Steering
+description: Machine-specific Docker Desktop guidance for WSL on Windows.
+applies_when:
+  - Docker commands from WSL
+  - Docker Desktop is unavailable or not running
+  - Docker socket permission or sandbox issues
+tags:
+  - docker
+  - wsl
+  - windows
+---
+
 # Docker and WSL Steering
 
 - This machine is WSL on Windows. Docker is expected to be provided by Docker Desktop on the Windows side.
