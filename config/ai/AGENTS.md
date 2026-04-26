@@ -1,6 +1,6 @@
 @RTK.md
 
-# Global Claude Code Guidance
+# Global AI Guidance
 
 ## Working Agreements
 
@@ -14,18 +14,18 @@
 
 Read these opinionated global steering docs only when the task touches the relevant area:
 
-- Monorepos, Nx, and `just`: `~/.claude/steering/monorepos.md`
-- TypeScript, pnpm, Biome, Vite, and TanStack: `~/.claude/steering/typescript.md`
-- Python, uv, Ruff, and ty: `~/.claude/steering/python.md`
-- Go and protobuf tooling: `~/.claude/steering/go.md`
-- Java, SDKMAN, Maven, Gradle, and Checkstyle: `~/.claude/steering/java.md`
-- Git workflow and commits: `~/.claude/steering/git.md`
-- Testing and verification: `~/.claude/steering/testing.md`
-- Generated code: `~/.claude/steering/codegen.md`
-- Docker on WSL: `~/.claude/steering/docker-wsl.md`
-- Frontend application work: `~/.claude/steering/frontend.md`
+- Monorepos, Nx, and `just`: `~/dotfiles/config/ai/steering/monorepos.md`
+- TypeScript, pnpm, Biome, Vite, and TanStack: `~/dotfiles/config/ai/steering/typescript.md`
+- Python, uv, Ruff, and ty: `~/dotfiles/config/ai/steering/python.md`
+- Go and protobuf tooling: `~/dotfiles/config/ai/steering/go.md`
+- Java, SDKMAN, Maven, Gradle, and Checkstyle: `~/dotfiles/config/ai/steering/java.md`
+- Git workflow and commits: `~/dotfiles/config/ai/steering/git.md`
+- Testing and verification: `~/dotfiles/config/ai/steering/testing.md`
+- Generated code: `~/dotfiles/config/ai/steering/codegen.md`
+- Docker on WSL: `~/dotfiles/config/ai/steering/docker-wsl.md`
+- Frontend application work: `~/dotfiles/config/ai/steering/frontend.md`
 
-Do not read every steering doc by default. Steering docs include frontmatter; use `applies_when` and `tags` as routing hints. Direct user instructions and repo-local `CLAUDE.md` files override these global docs.
+Do not read every steering doc by default. Steering docs include frontmatter; use `applies_when` and `tags` as routing hints. Direct user instructions and repo-local AGENTS.md/CLAUDE.md files override these global docs.
 
 ## Toolchains
 
