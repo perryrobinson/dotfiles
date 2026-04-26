@@ -175,7 +175,8 @@ dotfiles/
 ├── config/                     # Application configurations
 │   ├── nvim/                   # Neovim / LazyVim configuration
 │   ├── codex/
-│   │   └── AGENTS.md           # Global Codex guidance
+│   │   ├── AGENTS.md           # Global Codex guidance
+│   │   └── steering/           # Detailed global Codex steering docs
 │   ├── tmux.conf               # Tmux configuration
 │   └── vscode/                 # VS Code settings
 │       ├── extensions.txt      # Recommended extensions
