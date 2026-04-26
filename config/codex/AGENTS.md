@@ -18,6 +18,13 @@
 - For Java, use SDKMAN-managed Java, Maven, and Gradle when available.
 - Use the repository's existing formatter, linter, test runner, and package manager rather than substituting equivalents.
 
+## Current Documentation
+
+- Use Context7 MCP for current documentation when the user asks about a library, framework, SDK, API, CLI tool, or cloud service.
+- Prefer Context7 over web search for API syntax, configuration, setup instructions, migrations, and library-specific debugging.
+- Do not use Context7 for general programming concepts, business-logic debugging, code review, refactoring, or writing scripts from scratch.
+- Start by resolving the library ID, choose the best matching source, then query docs with the user's full question. Use version-specific docs when the user names a version.
+
 ## Docker and WSL
 
 - This machine is WSL on Windows. Docker is expected to be provided by Docker Desktop on the Windows side.
