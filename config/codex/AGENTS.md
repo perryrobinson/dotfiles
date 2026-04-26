@@ -11,11 +11,11 @@
 
 ## Toolchains
 
-- For TypeScript and JavaScript, prefer `pnpm` and respect pnpm workspaces.
+- For TypeScript and JavaScript, prefer `pnpm` and respect pnpm workspaces. Use `biome` for linting/formatting.
 - For browser SPAs, prefer Vite and TanStack Router unless the repository clearly uses another stack.
 - Use nvm-managed Node versions. Check `.nvmrc`, `packageManager`, lockfiles, and workspace files before changing Node tooling.
-- For Python, prefer `uv` for dependency management, virtual environments, scripts, and workspaces.
-- For Java, use SDKMAN-managed Java, Maven, and Gradle when available.
+- For Python, use `uv` for dependency management, virtual environments, scripts, and workspaces. use `ruff` and `ty` for linting and typechecking.
+- For Java, use SDKMAN-managed Java, Maven, and Gradle when available. Use `checkstyle` for linting.
 - Use the repository's existing formatter, linter, test runner, and package manager rather than substituting equivalents.
 
 ## Current Documentation
