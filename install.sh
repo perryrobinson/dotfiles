@@ -192,6 +192,7 @@ install_dev_tools() {
     if confirm "Do you want to install Neovim with LazyVim?"; then
         bash "$DOTFILES_DIR/tools/setup_nvim.sh"
     fi
+
 }
 
 # Ask if the user wants to install development tools
