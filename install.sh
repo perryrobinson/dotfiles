@@ -21,7 +21,7 @@ log_success "Created $BACKUP_DIR"
 
 # Backup existing files
 log_step 2 "Backing up existing configuration..."
-for file in .bashrc .bash_aliases .bash_functions .bash_paths .bash_logger .tmux.conf .codex/AGENTS.md; do
+for file in .bashrc .bash_aliases .bash_functions .bash_paths .bash_logger .tmux.conf .codex/AGENTS.md .claude/CLAUDE.md .claude/rules/context7.md; do
     if [ -f "$HOME/$file" ] || [ -L "$HOME/$file" ]; then
         log_detail "Backing up $HOME/$file"
         mv "$HOME/$file" "$BACKUP_DIR/"
@@ -72,7 +72,33 @@ install_files "$DOTFILES_DIR/bash/bash_functions" "$HOME/.bash_functions"
 install_files "$DOTFILES_DIR/bash/bash_paths" "$HOME/.bash_paths"
 install_files "$DOTFILES_DIR/bash/bash_logger" "$HOME/.bash_logger"
 install_files "$DOTFILES_DIR/config/tmux.conf" "$HOME/.tmux.conf"
+
+# AI coding tool configs
+log_section "Installing AI Tool Configurations"
+
+# Codex
 install_files "$DOTFILES_DIR/config/codex/AGENTS.md" "$HOME/.codex/AGENTS.md"
+for f in "$DOTFILES_DIR/config/codex/steering/"*.md; do
+    install_files "$f" "$HOME/.codex/steering/$(basename "$f")"
+done
+
+# Claude Code
+install_files "$DOTFILES_DIR/config/claude/CLAUDE.md" "$HOME/.claude/CLAUDE.md"
+install_files "$DOTFILES_DIR/config/claude/rules/context7.md" "$HOME/.claude/rules/context7.md"
+for f in "$DOTFILES_DIR/config/claude/steering/"*.md; do
+    install_files "$f" "$HOME/.claude/steering/$(basename "$f")"
+done
+
+# OpenCode — TODO: verify global AGENTS.md path once confirmed upstream
+# install_files "$DOTFILES_DIR/config/opencode/AGENTS.md" "$HOME/.config/opencode/AGENTS.md"
+# for f in "$DOTFILES_DIR/config/opencode/steering/"*.md; do
+#     install_files "$f" "$HOME/.config/opencode/steering/$(basename "$f")"
+# done
+
+# Kiro — TODO: verify global steering path once confirmed upstream
+# for f in "$DOTFILES_DIR/config/kiro/steering/"*.md; do
+#     install_files "$f" "$HOME/.kiro/steering/$(basename "$f")"
+# done
 
 # Create secrets file from template if it doesn't exist
 if [ ! -f "$HOME/.bash_secrets" ]; then
