@@ -44,7 +44,7 @@ During installation, you'll be prompted to choose between two installation metho
   - Go: Installs Go directly from the official website.
   - Rust: Uses rustup for toolchain management (rustc, cargo, clippy, rustfmt).
   - Neovim: Builds from source with LazyVim configuration. See [top Neovim configs](https://dotfyle.com/neovim/configurations/top) for inspiration.
-- **Codex Guidance**: Global Codex instructions installed to `~/.codex/AGENTS.md` so every local Codex session inherits the same development preferences.
+- **AI Guidance**: Opinionated steering docs and a global AGENTS.md in `config/ai/` — copy into whichever AI coding tools you use.
 
 - **Docker Support**: Optional installation of Docker and Docker Compose
 
@@ -147,7 +147,7 @@ ls -la  # Should show a backup file with timestamp
 - Add your own aliases to `.bash_aliases`
 - Add custom functions to `.bash_functions`
 - Modify PATH settings in `.bash_paths`
-- Modify Codex agent guidance in `config/codex/AGENTS.md`
+- Modify AI guidance in `config/ai/AGENTS.md` and `config/ai/steering/`
 - Store secrets and API keys in `.bash_secrets`
 
 ## Structure
@@ -174,9 +174,9 @@ dotfiles/
 │       └── rust.sh             # Rust/Cargo configuration
 ├── config/                     # Application configurations
 │   ├── nvim/                   # Neovim / LazyVim configuration
-│   ├── codex/
-│   │   ├── AGENTS.md           # Global Codex guidance
-│   │   └── steering/           # Detailed global Codex steering docs
+│   ├── ai/                     # AI coding tool guidance (copy into tools as needed)
+│   │   ├── AGENTS.md           # Global AGENTS.md / CLAUDE.md template
+│   │   └── steering/           # Opinionated steering docs (language, toolchain, style)
 │   ├── tmux.conf               # Tmux configuration
 │   └── vscode/                 # VS Code settings
 │       ├── extensions.txt      # Recommended extensions
