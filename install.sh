@@ -78,27 +78,34 @@ log_section "Installing AI Tool Configurations"
 
 # Codex
 install_files "$DOTFILES_DIR/config/codex/AGENTS.md" "$HOME/.codex/AGENTS.md"
+install_files "$DOTFILES_DIR/config/codex/RTK.md" "$HOME/.codex/RTK.md"
 for f in "$DOTFILES_DIR/config/codex/steering/"*.md; do
     install_files "$f" "$HOME/.codex/steering/$(basename "$f")"
 done
 
 # Claude Code
 install_files "$DOTFILES_DIR/config/claude/CLAUDE.md" "$HOME/.claude/CLAUDE.md"
+install_files "$DOTFILES_DIR/config/claude/RTK.md" "$HOME/.claude/RTK.md"
 install_files "$DOTFILES_DIR/config/claude/rules/context7.md" "$HOME/.claude/rules/context7.md"
 for f in "$DOTFILES_DIR/config/claude/steering/"*.md; do
     install_files "$f" "$HOME/.claude/steering/$(basename "$f")"
 done
 
-# OpenCode — TODO: verify global AGENTS.md path once confirmed upstream
-# install_files "$DOTFILES_DIR/config/opencode/AGENTS.md" "$HOME/.config/opencode/AGENTS.md"
-# for f in "$DOTFILES_DIR/config/opencode/steering/"*.md; do
-#     install_files "$f" "$HOME/.config/opencode/steering/$(basename "$f")"
-# done
+# OpenCode
+install_files "$DOTFILES_DIR/config/opencode/AGENTS.md" "$HOME/.config/opencode/AGENTS.md"
+install_files "$DOTFILES_DIR/config/opencode/plugins/rtk.ts" "$HOME/.config/opencode/plugins/rtk.ts"
+for f in "$DOTFILES_DIR/config/opencode/steering/"*.md; do
+    install_files "$f" "$HOME/.config/opencode/steering/$(basename "$f")"
+done
 
-# Kiro — TODO: verify global steering path once confirmed upstream
-# for f in "$DOTFILES_DIR/config/kiro/steering/"*.md; do
-#     install_files "$f" "$HOME/.kiro/steering/$(basename "$f")"
-# done
+# Kiro
+for f in "$DOTFILES_DIR/config/kiro/steering/"*.md; do
+    install_files "$f" "$HOME/.kiro/steering/$(basename "$f")"
+done
+for f in "$DOTFILES_DIR/config/kiro/hooks/"*.sh; do
+    install_files "$f" "$HOME/.kiro/hooks/$(basename "$f")"
+    chmod +x "$HOME/.kiro/hooks/$(basename "$f")"
+done
 
 # Create secrets file from template if it doesn't exist
 if [ ! -f "$HOME/.bash_secrets" ]; then
@@ -218,6 +225,11 @@ install_dev_tools() {
     # Install Neovim with LazyVim
     if confirm "Do you want to install Neovim with LazyVim?"; then
         bash "$DOTFILES_DIR/tools/setup_nvim.sh"
+    fi
+
+    # Install RTK (Rust Token Killer) for AI tool token savings
+    if confirm "Do you want to install RTK (AI token optimizer)?"; then
+        bash "$DOTFILES_DIR/tools/setup_rtk.sh"
     fi
 }
 

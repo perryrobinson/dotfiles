@@ -12,16 +12,16 @@
 
 Read these opinionated global steering docs only when the task touches the relevant area:
 
-- Monorepos, Nx, and `just`: `~/dotfiles/config/opencode/steering/monorepos.md`
-- TypeScript, pnpm, Biome, Vite, and TanStack: `~/dotfiles/config/opencode/steering/typescript.md`
-- Python, uv, Ruff, and ty: `~/dotfiles/config/opencode/steering/python.md`
-- Go and protobuf tooling: `~/dotfiles/config/opencode/steering/go.md`
-- Java, SDKMAN, Maven, Gradle, and Checkstyle: `~/dotfiles/config/opencode/steering/java.md`
-- Git workflow and commits: `~/dotfiles/config/opencode/steering/git.md`
-- Testing and verification: `~/dotfiles/config/opencode/steering/testing.md`
-- Generated code: `~/dotfiles/config/opencode/steering/codegen.md`
-- Docker on WSL: `~/dotfiles/config/opencode/steering/docker-wsl.md`
-- Frontend application work: `~/dotfiles/config/opencode/steering/frontend.md`
+- Monorepos, Nx, and `just`: `~/.config/opencode/steering/monorepos.md`
+- TypeScript, pnpm, Biome, Vite, and TanStack: `~/.config/opencode/steering/typescript.md`
+- Python, uv, Ruff, and ty: `~/.config/opencode/steering/python.md`
+- Go and protobuf tooling: `~/.config/opencode/steering/go.md`
+- Java, SDKMAN, Maven, Gradle, and Checkstyle: `~/.config/opencode/steering/java.md`
+- Git workflow and commits: `~/.config/opencode/steering/git.md`
+- Testing and verification: `~/.config/opencode/steering/testing.md`
+- Generated code: `~/.config/opencode/steering/codegen.md`
+- Docker on WSL: `~/.config/opencode/steering/docker-wsl.md`
+- Frontend application work: `~/.config/opencode/steering/frontend.md`
 
 Do not read every steering doc by default. Steering docs include frontmatter; use `applies_when` and `tags` as routing hints. Direct user instructions and repo-local `AGENTS.md` files override these global docs.
 
