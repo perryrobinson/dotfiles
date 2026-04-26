@@ -16,6 +16,13 @@
 - For Java, use SDKMAN-managed Java, Maven, and Gradle when available.
 - Use the repository's existing formatter, linter, test runner, and package manager rather than substituting equivalents.
 
+## Docker and WSL
+
+- This machine is WSL on Windows. Docker is expected to be provided by Docker Desktop on the Windows side.
+- If Docker is unavailable from WSL, check whether Docker Desktop is running before concluding Docker is not installed.
+- Prefer starting Docker Desktop from WSL and retrying the Docker command, for example with `powershell.exe -NoProfile -Command "Start-Process 'Docker Desktop'"`.
+- Do not install Docker directly inside WSL unless explicitly asked. Some people use that setup, but this machine's default is Windows Docker Desktop with WSL integration.
+
 ## Verification
 
 - Run the narrowest relevant formatter, typecheck, lint, and tests after code changes.
