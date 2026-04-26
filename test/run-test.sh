@@ -54,6 +54,7 @@ docker run --rm -e DOTFILES_CI=1 "${IMAGE_NAME}:installed" bash -c '
     check "~/.bashrc is a symlink"       test -L ~/.bashrc
     check "~/.bash_aliases is a symlink"  test -L ~/.bash_aliases
     check "~/.tmux.conf is a symlink"     test -L ~/.tmux.conf
+    check "~/.codex/AGENTS.md is a symlink" test -L ~/.codex/AGENTS.md
 
     echo "--- Tools on PATH ---"
     check "node is on PATH"    command -v node
