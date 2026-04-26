@@ -193,10 +193,6 @@ install_dev_tools() {
         bash "$DOTFILES_DIR/tools/setup_nvim.sh"
     fi
 
-    # Install RTK (Rust Token Killer) for AI tool token savings
-    if confirm "Do you want to install RTK (AI token optimizer)?"; then
-        bash "$DOTFILES_DIR/tools/setup_rtk.sh"
-    fi
 }
 
 # Ask if the user wants to install development tools
