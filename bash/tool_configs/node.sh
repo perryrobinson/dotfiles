@@ -51,6 +51,15 @@ if [ -s "$NVM_DIR/nvm.sh" ]; then
     }
 fi
 
-# pnpm is provided by corepack via the default node installation above.
-# No separate PNPM_HOME or PATH entry needed — the corepack shim lives
-# in the same bin directory as node/npm/npx.
+# =============================================================================
+# pnpm
+# =============================================================================
+# The `pnpm` binary itself is the corepack shim from the node install above.
+# PNPM_HOME is separate: it is where pnpm installs *global* packages
+# (`pnpm add -g`, `pnpm dlx` cache, etc.) and pnpm refuses to do global
+# installs without it being set and on PATH.
+export PNPM_HOME="$HOME/.local/share/pnpm"
+case ":$PATH:" in
+    *":$PNPM_HOME:"*) ;;
+    *) export PATH="$PNPM_HOME:$PATH" ;;
+esac

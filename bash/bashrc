@@ -54,4 +54,3 @@ if [ -d "$HOME/.tool_configs" ]; then
     fi
   done
 fi
-
