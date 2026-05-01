@@ -40,6 +40,12 @@ ensure_pnpm() {
     corepack enable
     log_detail "Preparing pnpm@latest via corepack..."
     corepack prepare pnpm@latest --activate
+
+    # Pre-create PNPM_HOME so global installs (`pnpm add -g`) work without
+    # needing the user to run `pnpm setup` interactively. The PATH entry is
+    # set in bash/tool_configs/node.sh.
+    local pnpm_home="${PNPM_HOME:-$HOME/.local/share/pnpm}"
+    mkdir -p "$pnpm_home"
 }
 
 ensure_typescript() {
