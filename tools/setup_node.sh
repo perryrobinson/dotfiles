@@ -31,6 +31,26 @@ get_latest_nvm_version() {
     fi
 }
 
+# Minimum supported pnpm major version. Corepack's bundled `@latest` lags
+# behind npm (it ships a hardcoded "known good" map per Node release), so we
+# resolve the actual latest in this major line from the npm registry.
+PNPM_MAJOR=11
+
+get_latest_pnpm_version() {
+    local major="$1"
+    local version=""
+    if command -v jq &> /dev/null; then
+        version=$(curl -s "https://registry.npmjs.org/-/package/pnpm/dist-tags" | jq -r ".\"latest-$major\"")
+    else
+        version=$(curl -s "https://registry.npmjs.org/-/package/pnpm/dist-tags" | grep -Po "\"latest-$major\"\s*:\s*\"\K[^\"]+")
+    fi
+    if [ -z "$version" ] || [ "$version" = "null" ]; then
+        echo ""
+    else
+        echo "$version"
+    fi
+}
+
 ensure_pnpm() {
     if ! command -v corepack &> /dev/null; then
         log_error "corepack not found — it ships with Node 16.9+. Check your node installation."
@@ -38,8 +58,15 @@ ensure_pnpm() {
     fi
     log_step "Enabling corepack for pnpm..."
     corepack enable
-    log_detail "Preparing pnpm@latest via corepack..."
-    corepack prepare pnpm@latest --activate
+
+    local pnpm_version
+    pnpm_version=$(get_latest_pnpm_version "$PNPM_MAJOR")
+    if [ -z "$pnpm_version" ]; then
+        log_detail "Could not resolve latest pnpm $PNPM_MAJOR.x from npm; falling back to pnpm@$PNPM_MAJOR"
+        pnpm_version="$PNPM_MAJOR"
+    fi
+    log_detail "Preparing pnpm@$pnpm_version via corepack..."
+    corepack prepare "pnpm@$pnpm_version" --activate
 }
 
 ensure_typescript() {
