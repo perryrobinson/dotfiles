@@ -31,6 +31,30 @@ get_latest_nvm_version() {
     fi
 }
 
+# Target pnpm major version. Corepack's bundled `@latest` lags behind npm
+# (it ships a hardcoded "known good" version map per Node release), so we
+# resolve the actual latest in this major line from the npm registry.
+# Bare-major fallback (`pnpm@11`) is intentional: corepack resolves bare
+# majors against npm and bypasses the KGV map, so it stays current even if
+# the dist-tag fetch fails. Do not "simplify" the fallback back to
+# `pnpm@latest` — that re-introduces the stale-KGV bug.
+PNPM_TARGET_MAJOR=11
+
+get_latest_pnpm_version() {
+    local major="$1"
+    local version=""
+    if command -v jq &> /dev/null; then
+        version=$(curl -s --connect-timeout 5 --max-time 10 "https://registry.npmjs.org/-/package/pnpm/dist-tags" | jq -r ".\"latest-$major\"")
+    else
+        version=$(curl -s --connect-timeout 5 --max-time 10 "https://registry.npmjs.org/-/package/pnpm/dist-tags" | grep -Po "\"latest-$major\"\s*:\s*\"\K[^\"]+")
+    fi
+    if [ -z "$version" ] || [ "$version" = "null" ]; then
+        echo ""
+    else
+        echo "$version"
+    fi
+}
+
 ensure_pnpm() {
     if ! command -v corepack &> /dev/null; then
         log_error "corepack not found — it ships with Node 16.9+. Check your node installation."
@@ -38,8 +62,21 @@ ensure_pnpm() {
     fi
     log_step "Enabling corepack for pnpm..."
     corepack enable
-    log_detail "Preparing pnpm@latest via corepack..."
-    corepack prepare pnpm@latest --activate
+
+    local pnpm_version
+    pnpm_version=$(get_latest_pnpm_version "$PNPM_TARGET_MAJOR")
+    if [ -z "$pnpm_version" ]; then
+        log_detail "Could not resolve latest pnpm $PNPM_TARGET_MAJOR.x from npm; falling back to pnpm@$PNPM_TARGET_MAJOR"
+        pnpm_version="$PNPM_TARGET_MAJOR"
+    fi
+    log_detail "Preparing pnpm@$pnpm_version via corepack..."
+    corepack prepare "pnpm@$pnpm_version" --activate
+
+    # Pre-create PNPM_HOME so global installs (`pnpm add -g`) work without
+    # needing the user to run `pnpm setup` interactively. The PATH entry is
+    # set in bash/tool_configs/node.sh.
+    local pnpm_home="${PNPM_HOME:-$HOME/.local/share/pnpm}"
+    mkdir -p "$pnpm_home"
 }
 
 ensure_typescript() {
