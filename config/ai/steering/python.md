@@ -36,9 +36,9 @@ tags:
 - Use Polars when dataframe-style work is needed.
 - Use FastAPI for Python APIs, served with Uvicorn or Gunicorn depending on the deployment shape.
 - Keep FastAPI apps modular: app creation, routes, dependencies, settings, and persistence should not all live in one file once the project grows.
-- Prefer Pydantic v2 models over dataclasses for validation, settings, DTOs, and structured API/domain boundaries.
+- Use Pydantic v2 at I/O boundaries: API request/response models, settings, and parsing external data. Inside the domain layer, prefer `@dataclass(frozen=True, slots=True)` (or `attrs`) so construction pays no validation cost and the domain does not depend on a framework.
 - Use `pydantic-settings` or typed settings models for configuration. Avoid scattered direct environment lookups.
-- Build a common/shared package early in Python projects for cross-cutting concerns such as logging, configuration, database connections, DTOs, and domain models.
+- Extract a shared package when a second consumer needs the code, not before. Keep it narrow and name it for its purpose (`acme-logging`, `acme-settings`) rather than `common`, which becomes a dumping ground that every package depends on.
 - Prefer structured logging and shared logging setup over per-module ad hoc logger configuration.
 - Keep database/session lifecycle management centralized in shared infrastructure code.
 - Do not hand-edit generated Python protobuf, OpenAPI, or client outputs. Regenerate them through the repo's codegen command.
@@ -49,7 +49,7 @@ The same setup for every new Python project: a uv workspace with a virtual root,
 
 Every check exits non-zero on any finding, because agents read exit codes. Ruff and Pyrefly have no warning tier here; everything selected is an error.
 
-Verified in a scratch workspace (uv 0.11, Ruff 0.16, Pyrefly 1.3): `uv sync --locked`, `ruff check`, `ruff format --check`, `pyrefly check`, and `pytest` pass on clean code, and Ruff and Pyrefly fail on bad code, including across package boundaries. The CI workflow, Lefthook hook, and Docker snippet were not run.
+Verified in a scratch workspace (uv 0.11, Ruff 0.16, Pyrefly 1.3, pytest 9): `uv sync --locked`, `ruff check`, `ruff format --check`, `pyrefly check`, and `pytest` pass on clean code, and Ruff and Pyrefly fail on bad code, including across package boundaries. Reproduced and fixed: pytest's import-mode collision between same-named test files in two members, and Ruff `TC003` rewriting Pydantic model imports under `from __future__ import annotations`. The CI workflow, Lefthook hook, and Docker snippet were not run.
 
 ### Layout
 
@@ -58,7 +58,7 @@ pyproject.toml          # virtual workspace root: members, dev tools, Ruff/pytes
 uv.lock                 # committed
 .python-version
 justfile
-packages/common/        # shared package: logging, settings, DTOs, DB session
+packages/common/        # example shared package; extract only once a second consumer needs it, and name it for its purpose
   pyproject.toml
   src/acme_common/{__init__.py,py.typed}
   tests/
@@ -94,10 +94,11 @@ acme-api = { workspace = true }
 dev = [
   "acme-common",
   "acme-api",
+  "lefthook>=2",
   "pyrefly>=1.3",
-  "pytest>=8",
+  "pytest>=9",
   "pytest-asyncio>=1",
-  "ruff>=0.14",
+  "ruff>=0.16",
 ]
 
 [tool.ruff]
@@ -115,6 +116,10 @@ ignore = ["ANN401"]
 [tool.ruff.lint.flake8-tidy-imports]
 ban-relative-imports = "all"
 
+[tool.ruff.lint.flake8-type-checking]
+runtime-evaluated-base-classes = ["pydantic.BaseModel", "pydantic_settings.BaseSettings"]
+runtime-evaluated-decorators = ["pydantic.validate_call"]
+
 [tool.ruff.lint.isort]
 known-first-party = ["acme_common", "acme_api"]
 
@@ -123,7 +128,7 @@ known-first-party = ["acme_common", "acme_api"]
 
 [tool.pytest.ini_options]
 testpaths = ["packages", "apps"]
-addopts = ["-ra", "--strict-markers", "--strict-config"]
+addopts = ["-ra", "--strict-markers", "--strict-config", "--import-mode=importlib"]
 asyncio_mode = "auto"
 
 [tool.pyrefly]
@@ -135,6 +140,8 @@ search-path = ["packages/common/src", "apps/api/src"]
 - `package = false` and no `[build-system]` make the root virtual: it installs nothing itself. Members come in through `dev`, so a plain `uv sync` installs every member editable plus the tooling.
 - Every member listed in `[tool.uv.workspace]` and used by another member needs `{ workspace = true }` in `[tool.uv.sources]`. Add it to the root `sources` and `dev` group so the root environment includes it, and to each depending member's own `sources`.
 - Ruff's `TID252` (with `ban-relative-imports = "all"`) enforces absolute imports. `TC` moves type-only imports under `TYPE_CHECKING`. `T20` bans `print`, and `S`/`ANN` catch security and missing-annotation issues.
+- `[tool.ruff.lint.flake8-type-checking]` is required for Pydantic and FastAPI. `TC` moves annotation-only imports under `TYPE_CHECKING`, but Pydantic models and FastAPI signatures read annotations at runtime. With `from __future__ import annotations` (or any quoted annotation), `ruff check --fix` otherwise rewrites model imports and the app fails at import. List any other runtime-evaluated base class (SQLModel, for example) there too.
+- `--import-mode=importlib` is required because each member has its own `tests/` directory. Under the default import mode, two members with `tests/test_models.py` fail collection with an import-file mismatch.
 - Add `"D"` with `convention = "google"` only if the repo wants docstring enforcement.
 - Pyrefly's `strict` preset adds `implicit-any` and `missing-override-decorator` on top of the default checks. Do not weaken it; fix the code.
 
@@ -175,7 +182,7 @@ requires = ["uv_build>=0.11,<0.12"]
 build-backend = "uv_build"
 ```
 
-`uv_build` expects `src/<name_with_underscores>/__init__.py`. Add an empty `py.typed` to library packages. Dev tooling stays in the root `dev` group; a member's runtime dependencies stay in that member's `dependencies`.
+`uv_build` expects `src/<name_with_underscores>/__init__.py`. Keep the `uv_build` range on the same minor as the uv in use (`uv --version`) and bump both together. Add an empty `py.typed` to library packages. Dev tooling stays in the root `dev` group; a member's runtime dependencies stay in that member's `dependencies`.
 
 ### `justfile` (root)
 
@@ -185,6 +192,9 @@ default:
 
 sync:
     uv sync --locked
+
+setup: sync
+    uv run lefthook install
 
 fmt:
     uv run ruff format .
@@ -199,7 +209,7 @@ test *args:
     uv run pytest {{args}}
 ```
 
-`just check` is the single gate for formatting, lint, and types; `just test` runs pytest, and takes extra arguments (`just test -k name apps/api`).
+`just setup` installs the environment and the git hooks; run it once per clone. `just check` is the single gate for formatting, lint, and types; `just test` runs pytest, and takes extra arguments (`just test -k name apps/api`).
 
 ### uv commands
 
@@ -238,17 +248,17 @@ pre-commit:
   jobs:
     - name: format
       glob: "*.py"
-      run: uv run ruff format {staged_files}
+      run: uv run ruff format --force-exclude {staged_files}
       stage_fixed: true
     - name: lint
       glob: "*.py"
-      run: uv run ruff check {staged_files}
+      run: uv run ruff check --force-exclude {staged_files}
     - name: typecheck
       glob: "*.py"
       run: uv run pyrefly check
 ```
 
-Pyrefly runs project-wide on each commit; it is fast enough that checking only staged files is unnecessary. Install the hook with `lefthook install`.
+Pyrefly runs project-wide on each commit; it is fast enough that checking only staged files is unnecessary. `--force-exclude` keeps Ruff's `exclude` (generated protobuf, migrations) in force for explicitly passed files. `lefthook` comes from the root `dev` group; `just setup` installs the hooks. Lefthook is the only hook manager; see `github-actions.md` for the `commit-msg` and `pre-push` jobs.
 
 ### `.github/workflows/ci.yml`
 
@@ -260,12 +270,20 @@ on:
     branches: [main]
   pull_request:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   check:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v7
-      - uses: astral-sh/setup-uv@v10
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
           enable-cache: true
       - run: uv sync --locked
@@ -279,22 +297,23 @@ jobs:
   test:
     needs: check
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v7
-      - uses: astral-sh/setup-uv@v10
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
           enable-cache: true
       - run: uv sync --locked
       - run: uv run pytest
 ```
 
-Separate steps make a failure name its cause (format, lint, or types). `test` waits on `check` so broken code never burns test minutes.
+Every action is pinned to a full commit SHA, per `github-actions.md`. Separate steps make a failure name its cause (format, lint, or types). `test` waits on `check` so broken code never burns test minutes.
 
 ### Docker
 
 ```dockerfile
 FROM python:3.13-slim
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+COPY --from=ghcr.io/astral-sh/uv:0.11 /uv /uvx /bin/
 WORKDIR /app
 ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy
 
@@ -309,11 +328,17 @@ COPY . /app
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --locked --package acme-api --no-dev
 
+RUN useradd --system --no-create-home app
+USER app
 ENV PATH="/app/.venv/bin:$PATH"
 CMD ["uvicorn", "acme_api.main:app", "--host", "0.0.0.0"]
 ```
 
-Dependency layers cache separately from source. Add each member's `pyproject.toml` bind mount as members grow.
+- Dependency layers cache separately from source. Add each member's `pyproject.toml` bind mount as members grow.
+- Pin the uv image to the project's uv minor (or a digest), never `latest`.
+- `COPY . /app` needs a `.dockerignore` listing at least `.venv`, `.git`, `__pycache__`, and `.*_cache`. Otherwise the host `.venv` lands in the image.
+- The workspace installs as editable, so the venv points at `/app/src`; that works in this single-stage build. In a multi-stage build, add `--no-editable` to the final `uv sync` and copy only `.venv`.
+- `--host 0.0.0.0` is correct inside a container; the platform decides what is exposed.
 
 ### Applying to a repo
 
@@ -324,5 +349,7 @@ Run in this order; each step is verifiable before the next:
 3. Set `search-path`, run `uv run pyrefly dump-config`, and confirm every first-party file is covered. Then run `uv run pyrefly check` and fix every error. Adopt strictness on an existing repo in stages: start with `preset = "default"`, fix, then switch to `"strict"`.
 4. Run `uv run pytest`.
 5. Write the `justfile` and confirm `just check` and `just test` pass.
-6. Write `lefthook.yml`, run `lefthook install`, and make a deliberately broken commit to confirm the hook blocks it.
+6. Write `lefthook.yml`, run `just setup`, and make a deliberately broken commit to confirm the hook blocks it.
 7. Write the CI workflow and confirm both jobs pass on a branch.
+
+In a repo that also has TypeScript, do not apply this file and `typescript.md` side by side. Use `polyglot-monorepo.md`, which merges the root manifests, hooks, and CI.
