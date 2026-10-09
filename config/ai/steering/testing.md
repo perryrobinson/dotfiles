@@ -20,7 +20,7 @@ tags:
 - Run the narrowest relevant formatter, typecheck, lint, and tests after code changes.
 - Prefer repo-provided commands such as `just check`, `just test`, Nx targets, package filters, or affected checks.
 - Use focused checks first while iterating, then run broader repo-level or affected checks before committing or claiming completion.
-- For TypeScript changes, include formatting/linting, typechecking, and relevant tests.
+- For TypeScript changes, run `pnpm run format:check`, `lint` (oxlint), `typecheck` (`tsc`), and relevant tests. Scope to changed packages with `turbo run <task> --filter=<package>`.
 - For Python changes, include Ruff format/check, `ty` when present, and relevant pytest targets.
 - For Go changes, include `go fmt`, `go vet`, and relevant `go test` targets.
 - For Java changes, include the repo's compile/check target and relevant JUnit tests.
