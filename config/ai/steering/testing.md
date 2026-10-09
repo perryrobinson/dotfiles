@@ -21,7 +21,7 @@ tags:
 - Prefer repo-provided commands such as `just check`, `just test`, Nx targets, package filters, or affected checks.
 - Use focused checks first while iterating, then run broader repo-level or affected checks before committing or claiming completion.
 - For TypeScript changes, run `pnpm run format:check`, `lint` (oxlint), `typecheck` (`tsc`), and relevant tests. Scope to changed packages with `turbo run <task> --filter=<package>`.
-- For Python changes, include Ruff format/check, `ty` when present, and relevant pytest targets.
+- For Python changes, run `uv run ruff format --check .`, `ruff check .`, `pyrefly check`, and relevant pytest targets (`just check` and `just test` when the repo has them).
 - For Go changes, include `go fmt`, `go vet`, and relevant `go test` targets.
 - For Java changes, include the repo's compile/check target and relevant JUnit tests.
 - For generated code, run the codegen command and check for drift.
