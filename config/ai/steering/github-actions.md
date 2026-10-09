@@ -12,6 +12,7 @@ tags:
   - release-please
   - dependabot
   - nx
+  - lefthook
 ---
 
 # GitHub Actions Steering
@@ -79,12 +80,14 @@ First-party `actions/*` and `docker/*` actions use the major tag.
 
 ## Polyglot monorepo pattern
 
-For repos with several languages, use one CI workflow built from these parts:
+Pick the tier by the rules in `monorepos.md` ("Nx or not"). Both tiers share one CI workflow with a `detect` job, a composite toolchain-setup action, and a codegen-drift job.
 
-- **`detect` job:** computes affected projects and per-language flags (needs Python, Go, Java, buf) from the project graph (for Nx: `nx show projects --affected --base=<ref> --withTarget <target> --json`). Check out with `fetch-depth: 0`. Downstream jobs run only for affected projects and install only the toolchains they need.
-- **Composite action `.github/actions/setup-toolchains`:** takes boolean inputs (`python`, `go`, `java`, `buf`) and installs Node and pnpm always (Nx drives the work), then uv, Go, golangci-lint, buf, and Java conditionally. This removes the repeated setup preamble across jobs. Use `go-version-file: go.work` and `cache-dependency-path: '**/go.sum'` for Go, `cache: maven` for Java, and `GOTOOLCHAIN=auto` when `go.work` declares a toolchain.
-- **Quality, test, integration, and codegen-drift jobs** run Nx targets (`nx affected -t check`, `-t test`) against the detected base. Codegen-drift jobs regenerate and fail on any diff.
-- **Skip redundant post-merge runs:** when branch protection requires PRs to be up to date and green, a push to `main` re-runs nothing except publishing.
+- **`detect` job:** computes which parts changed and per-language flags (needs Python, Go, Java, buf). Check out with `fetch-depth: 0`. Downstream jobs run only for affected parts and install only the toolchains they need.
+  - Default (no Nx): path filters (`dorny/paths-filter`, or `git diff --name-only <base>...HEAD` matched against `apps/*`, `packages/*`) set the flags; TypeScript jobs use `turbo run <task> --affected`; Python jobs run `just check`/`just test` when any Python path or `uv.lock` changed.
+  - Nx tier: `nx show projects --affected --base=<ref> --withTarget <target> --json`.
+- **Composite action `.github/actions/setup-toolchains`:** takes boolean inputs (`python`, `go`, `java`, `buf`) and installs Node and pnpm always, then uv, Go, golangci-lint, buf, and Java conditionally. This removes the repeated setup preamble across jobs. Use `go-version-file: go.work` and `cache-dependency-path: '**/go.sum'` for Go, `cache: maven` for Java, and `GOTOOLCHAIN=auto` when `go.work` declares a toolchain.
+- **Quality, test, integration, and codegen-drift jobs** run `just` recipes (default) or Nx targets (`nx affected -t check`, `-t test`) against the detected base. Codegen-drift jobs regenerate and fail on any diff.
+- **Skip redundant post-merge runs:** when branch protection requires PRs to be up to date and green (or a merge queue is on), a push to `main` re-runs nothing except publishing.
 
 ## PR title check
 
@@ -100,6 +103,24 @@ Put the Conventional Commits title check in its own workflow, with `pull_request
 
 Configure `.github/dependabot.yml` for every ecosystem the repo uses (`github-actions`, `npm`, `uv`, `maven`, `gomod`, `docker`, `docker-compose`) with `open-pull-requests-limit: 0`. That disables routine version-bump PRs, so pins stay deliberate, and still lets Dependabot open security-advisory PRs. Set `commit-message.prefix: deps` so those PRs pass the PR-title check, and add `deps` to the allowed types.
 
-## Pre-commit and push guards
+## Git hooks: Lefthook only
 
-Repos using the `pre-commit` framework add local hooks for a `commit-msg` Conventional Commits check and a `pre-push` guard that blocks pushes from `main`, plus a `pre-push` run of affected checks (`just check-affected`). Install all three hook types: `pre-commit install --hook-type pre-commit --hook-type commit-msg --hook-type pre-push`.
+Use Lefthook for every hook type; do not add the `pre-commit` framework to new repos. Lefthook runs the tools already in the repo (`pnpm oxlint`, `uv run ruff`) in parallel from one `lefthook.yml`, so TypeScript and Python jobs sit side by side in a polyglot repo. A repo that already uses `pre-commit` keeps it until migrated; do not run both.
+
+Add these jobs next to the pre-commit jobs from `typescript.md` and `python.md`:
+
+```yaml
+commit-msg:
+  jobs:
+    - name: conventional-commit
+      run: grep -Eq '^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\([A-Za-z0-9._-]+\))?!?: .+' {1} || { echo "Commit message must follow Conventional Commits"; exit 1; }
+
+pre-push:
+  jobs:
+    - name: no-push-from-main
+      run: test "$(git branch --show-current)" != main || { echo "Do not push from main"; exit 1; }
+    - name: affected-checks
+      run: just check-affected
+```
+
+`{1}` is the commit message file. `lefthook install` registers all hook types found in the file,; run it from the root `prepare` script in pnpm repos, or add a `setup` recipe (`lefthook install`) to the `justfile` in uv-only repos. Keep the commit-msg regex in sync with the PR-title check.
