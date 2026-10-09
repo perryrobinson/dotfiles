@@ -35,13 +35,14 @@ tags:
 - Check `.nvmrc`, `packageManager`, lockfiles, and workspace files before changing Node tooling.
 - Prefer strict TypeScript. Avoid `any`; model unknown data at boundaries and narrow it with validation.
 - Use the oxc toolchain: oxlint for linting and oxfmt for formatting. In an existing repo on other tools (Biome, ESLint, Prettier), keep them unless asked to migrate.
-- Use the repo's TypeScript checker command. If the repo uses `tsgo`, keep using it.
+- Lefthook is the only git hook manager. See `github-actions.md` for the `commit-msg` and `pre-push` jobs.
+- Use TypeScript 7 or newer (`typescript@^7`) for new and migrated workspaces. `tsc` is the native compiler. Do not add `@typescript/native-preview` or `tsgo`, which it replaced. `oxlint-tsgolint` is built on typescript-go, so type-aware lint and `tsc` must agree on one set of semantics. A repo stuck on TypeScript 5 or 6 (for example because a tool still needs the JS compiler API) keeps it and records the reason in the repo.
 - Prefer workspace filters such as `pnpm --filter <package> ...` for package-specific work.
-- Prefer Bulletproof React-style feature organization for React apps: app providers/routing at the top, feature modules for product behavior, shared components/utilities for reusable primitives, and API clients isolated from UI components.
+- Prefer Bulletproof React-style feature organization for React apps: app providers/routing at the top, feature modules for product behavior, shared components/utilities for reusable primitives, and API clients isolated from UI components. Scale the structure to the app; a small SPA does not need every layer.
 - Use TanStack Router for route structure and route-level data boundaries when building SPAs.
 - Use TanStack Query for server-state fetching, caching, mutations, retries, and invalidation. Do not replace it with ad hoc `useEffect` fetch flows.
 - Use Zod for runtime validation at external boundaries such as API responses, forms, URL/search params, environment/config, and local storage.
-- Keep form, API, and domain DTO types explicit. Avoid letting component props become the only data model.
+- Keep form, API, and domain DTO types explicit. Avoid letting component props become the only data model. Derive types from the Zod schema (`z.infer`) instead of hand-writing a parallel interface for the same shape.
 - Prefer modern CSS for new styling work unless the repo already uses a specific styling system.
 - Keep generated clients and route artifacts separated from hand-written source when possible.
 - Do not hand-edit generated route trees, generated API clients, or other generated TypeScript outputs. Regenerate them through the repo's codegen command.
@@ -52,15 +53,15 @@ The same setup for every new pnpm TypeScript workspace: strict `tsc`, oxlint (ty
 
 Every check exits non-zero on any finding, because agents read exit codes. A warning that exits 0 reads as success. The configs below set every rule to `error`, and lint scripts pass `--max-warnings 0`.
 
-Verified in a scratch workspace on pnpm 11: `typecheck`, `lint` (type-aware), and `oxfmt --check` run and fail on bad code, and the Lefthook hook formats staged files, blocks a bad commit, and passes a clean one. The CI workflow and Turborepo cache hits were not run.
+Verified in a scratch workspace on pnpm 11 and TypeScript 7.0: `typecheck`, `lint` (type-aware), and `oxfmt --check` run and fail on bad code, the tsconfig flags below are accepted by TypeScript 7, and the Lefthook hook formats staged files, blocks a bad commit, and passes a clean one. `turbo --filter='[HEAD]'` was confirmed to select packages with staged and unstaged changes. The CI workflow and Turborepo cache hits were not run.
 
 ### Install
 
 ```bash
-pnpm add -D -w typescript oxlint oxlint-tsgolint oxfmt turbo lefthook
+pnpm add -D -w typescript@^7 oxlint oxlint-tsgolint oxfmt turbo lefthook
 ```
 
-`oxlint-tsgolint` provides the type-aware rules. pnpm 11 blocks dependency build scripts, so approve Lefthook's postinstall in `pnpm-workspace.yaml` (`allowBuilds`, below) or the hook never installs.
+The `^7` range keeps the workspace on the native compiler; a bare `typescript` would take whatever the lockfile already holds. `oxlint-tsgolint` provides the type-aware rules. pnpm 11 blocks dependency build scripts, so approve Lefthook's postinstall in `pnpm-workspace.yaml` (`allowBuilds`, below) or the hook never installs.
 
 ### Root `package.json`
 
@@ -78,16 +79,17 @@ Pin `packageManager` to the pnpm version in use (check `pnpm --version`).
     "test": "turbo run test",
     "format": "oxfmt",
     "format:check": "oxfmt --check",
+    "check:toolchain": "tsc --version | grep -q '^Version 7\\.'",
     "prepare": "lefthook install"
   }
 }
 ```
 
-Run `pnpm run lint`, not `pnpm lint`, when a shell wrapper rewrites bare `pnpm <script>` calls.
+`check:toolchain` fails when the resolved TypeScript is not 7.x; CI runs it first. Run `pnpm run lint`, not `pnpm lint`, when a shell wrapper rewrites bare `pnpm <script>` calls.
 
 ### Package `package.json` scripts
 
-Each package defines the tasks Turborepo runs. Dev dependencies live at the root, so packages call the binaries directly.
+Each package defines the tasks Turborepo runs. Dev dependencies, including `typescript`, live at the root only, so every package uses one TypeScript version and calls the binaries directly. Do not add `typescript` to a package's own `devDependencies`.
 
 ```json
 {
@@ -254,6 +256,7 @@ For React packages, add the `react` plugin and `react/rules-of-hooks` as `error`
       "outputs": []
     },
     "lint": {
+      "dependsOn": ["^build"],
       "inputs": [
         "src/**",
         "tests/**",
@@ -273,7 +276,7 @@ For React packages, add the `react` plugin and `react/rules-of-hooks` as `error`
 }
 ```
 
-- `^build` on `typecheck` and `test` gives each package built types from its dependencies.
+- `^build` on `typecheck`, `lint`, and `test` gives each package built types from its dependencies. Type-aware lint resolves workspace imports the same way `tsc` does, so without it a clean checkout lints against missing types.
 - Keep `inputs` precise. `inputs: ["**"]` defeats the cache, and cache hits are what keep an agent's repeated `typecheck` and `lint` runs near-instant.
 - `ui: "stream"` keeps output as plain, ordered logs an agent can read; humans may switch to `"tui"` locally.
 - Add `"$TURBO_ROOT$/<file>"` to a task's `inputs` whenever a root config file changes that task's result.
@@ -295,7 +298,7 @@ pre-commit:
       run: pnpm turbo run typecheck --filter='[HEAD]'
 ```
 
-`--filter='[HEAD]'` typechecks only packages changed since HEAD, which keeps the hook fast in a large monorepo. A repo on Husky keeps Husky and adds the same filter to its hook. `lefthook install` runs through the root `prepare` script.
+`--filter='[HEAD]'` typechecks only packages with changes since HEAD, including staged and unstaged edits, which keeps the hook fast in a large monorepo. A repo on Husky keeps Husky and adds the same filter to its hook. `lefthook install` runs through the root `prepare` script.
 
 ### `.gitignore` additions
 
@@ -315,6 +318,13 @@ on:
     branches: [main]
   pull_request:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 env:
   TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
   TURBO_TEAM: ${{ vars.TURBO_TEAM }}
@@ -322,16 +332,17 @@ env:
 jobs:
   check:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v7
-        with:
-          fetch-depth: 2
-      - uses: pnpm/action-setup@v6
-      - uses: actions/setup-node@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - name: Toolchain
+        run: pnpm run check:toolchain
       - name: Type check
         run: pnpm run typecheck
       - name: Lint
@@ -342,12 +353,11 @@ jobs:
   build:
     needs: check
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v7
-        with:
-          fetch-depth: 2
-      - uses: pnpm/action-setup@v6
-      - uses: actions/setup-node@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: .nvmrc
           cache: pnpm
@@ -356,9 +366,11 @@ jobs:
       - run: pnpm run test
 ```
 
+- Every action is pinned to a full commit SHA, per `github-actions.md`; that file holds the current pins.
 - `pnpm/action-setup` reads the version from `packageManager`, so it needs no `version` input.
 - Separate steps make a failure name its cause (type, lint, or format). `build` waits on `check` so broken code never burns build minutes.
-- `fetch-depth: 2` is required for `--filter='[HEAD]'`-style comparisons.
+- The two jobs repeat the setup preamble. In a repo with more jobs, move it into a composite action (see "Polyglot monorepo pattern" in `github-actions.md`).
+- CI runs every package and relies on Turborepo's cache. To run only affected packages, use `turbo run <task> --affected` and check out with `fetch-depth: 0`; a shallow clone makes everything count as changed.
 - Only CI uses `--frozen-lockfile`. Agents run plain `pnpm install` locally and commit the updated lockfile.
 - `TURBO_TOKEN` and `TURBO_TEAM` enable remote caching and are optional.
 
@@ -373,3 +385,5 @@ Run in this order; each step is verifiable before the next:
 5. Write `turbo.json`; confirm a second `pnpm run typecheck` reports cache hits.
 6. Write `lefthook.yml`, run `pnpm install` (the `prepare` script installs the hook), and make a deliberately broken commit to confirm the hook blocks it.
 7. Write the CI workflow and confirm both jobs pass on a branch.
+
+In a repo that also has Python, do not apply this file and `python.md` side by side. Use `polyglot-monorepo.md`, which merges the root manifest, hooks, and CI.
