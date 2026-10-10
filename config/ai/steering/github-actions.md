@@ -19,26 +19,26 @@ tags:
 
 ## Current versions
 
-Verified against the GitHub releases API on 2026-10-08. Write the major tag (`@v7`) in new workflows. Before relying on this table in a later session, re-check with `gh api repos/<owner>/<repo>/releases/latest --jq .tag_name`; the table goes stale.
+Verified against the GitHub releases API on 2026-10-08. Write the SHA with the release in a trailing comment (`uses: actions/checkout@3d3c42e... # v7.0.1`) in new workflows. This table goes stale; before relying on it in a later session, re-resolve each row with `t=$(gh api repos/<owner>/<repo>/releases/latest --jq .tag_name); gh api repos/<owner>/<repo>/commits/$t --jq .sha`.
 
-| Action | Use | Latest release |
-| --- | --- | --- |
-| `actions/checkout` | `@v7` | v7.0.1 |
-| `actions/setup-node` | `@v7` | v7.1.0 |
-| `actions/setup-go` | `@v7` | v7.0.0 |
-| `actions/setup-java` | `@v6` | v6.0.1 |
-| `actions/cache` | `@v6` | v6.1.0 |
-| `actions/upload-artifact` | `@v7` | v7.0.2 |
-| `actions/download-artifact` | `@v8` | v8.0.2 |
-| `pnpm/action-setup` | `@v6` | v6.1.0 |
-| `astral-sh/setup-uv` | `@v10` | v10.2.0 |
-| `docker/setup-buildx-action` | `@v4` | v4.4.1 |
-| `docker/login-action` | `@v4` | v4.6.0 |
-| `docker/build-push-action` | `@v7` | v7.4.0 |
-| `docker/metadata-action` | `@v6` | v6.2.0 |
-| `golangci/golangci-lint-action` | `@v9` | v9.3.0 |
-| `bufbuild/buf-action` | `@v1` | v1.6.0 |
-| `googleapis/release-please-action` | `@v5` | v5.0.0 |
+| Action | Major | Latest release | Pin (full SHA of that release) |
+| --- | --- | --- | --- |
+| `actions/checkout` | `v7` | v7.0.1 | `3d3c42e5aac5ba805825da76410c181273ba90b1` |
+| `actions/setup-node` | `v7` | v7.1.0 | `949feb2413d6458794dcd2491c4babbbce0c15c1` |
+| `actions/setup-go` | `v7` | v7.0.0 | `b7ad1dad31e06c5925ef5d2fc7ad053ef454303e` |
+| `actions/setup-java` | `v6` | v6.0.1 | `de7274f081f381c8f8158605e0321c36c376e2e6` |
+| `actions/cache` | `v6` | v6.1.0 | `55cc8345863c7cc4c66a329aec7e433d2d1c52a9` |
+| `actions/upload-artifact` | `v7` | v7.0.2 | `cf430e030ddbb5b0abf93d22962f4752f3646cd9` |
+| `actions/download-artifact` | `v8` | v8.0.2 | `9000827ccba6bdab643e8b6fd33ac0654aef8333` |
+| `pnpm/action-setup` | `v6` | v6.1.0 | `ea17c68df8912ef543352723c149a84f56e3d413` |
+| `astral-sh/setup-uv` | `v10` | v10.2.0 | `c18668ad3cf93ea998bef934396af7bb5c839dc7` |
+| `docker/setup-buildx-action` | `v4` | v4.4.1 | `f87e5991a6d7451dcb8d9637bfbc97413f497069` |
+| `docker/login-action` | `v4` | v4.6.0 | `dbcb813823bdd20940b903addbd779551569679f` |
+| `docker/build-push-action` | `v7` | v7.4.0 | `c3c9e263c25d99ce0380d002d59b67737d91b0dc` |
+| `docker/metadata-action` | `v6` | v6.2.0 | `dc802804100637a589fabce1cb79ff13a1411302` |
+| `golangci/golangci-lint-action` | `v9` | v9.3.0 | `ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a` |
+| `bufbuild/buf-action` | `v1` | v1.6.0 | `85aebf73123b5c15fd5528aaecbf9129cddf7fa7` |
+| `googleapis/release-please-action` | `v5` | v5.0.0 | `45996ed1f6d02564a971a2fa1b5860e934307cf7` |
 
 Notes that affect how these are used:
 
@@ -56,7 +56,7 @@ Notes that affect how these are used:
 
 ## Pinning
 
-Pin third-party actions (anything outside `actions/*` and `docker/*`) to a full commit SHA with the version in a trailing comment. Resolve the SHA from a tag with:
+Pin every action to a full commit SHA with the release in a trailing comment, including `actions/*` and `docker/*`. Tags are mutable: a compromised or force-moved tag runs attacker code with your workflow's permissions (the tj-actions/changed-files incident), and GitHub's hardening guide recommends SHA pinning for all actions. `docker/*` is Docker's, not GitHub's, so it is third-party too. Resolve the SHA from a tag with:
 
 ```bash
 gh api repos/<owner>/<repo>/commits/<tag> --jq .sha
@@ -66,7 +66,7 @@ gh api repos/<owner>/<repo>/commits/<tag> --jq .sha
 - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
 ```
 
-First-party `actions/*` and `docker/*` actions use the major tag.
+Pins only stay current if something updates them; see "Dependabot" below.
 
 ## Workflow hygiene
 
@@ -80,18 +80,18 @@ First-party `actions/*` and `docker/*` actions use the major tag.
 
 ## Polyglot monorepo pattern
 
-Pick the tier by the rules in `monorepos.md` ("Nx or not"). Both tiers share one CI workflow with a `detect` job, a composite toolchain-setup action, and a codegen-drift job.
+Pick the tier by the rules in `monorepos.md` ("Nx or not"); the complete no-Nx scaffold is in `polyglot-monorepo.md`. Both tiers share one CI workflow with a `detect` job, a composite toolchain-setup action, and a codegen-drift job.
 
 - **`detect` job:** computes which parts changed and per-language flags (needs Python, Go, Java, buf). Check out with `fetch-depth: 0`. Downstream jobs run only for affected parts and install only the toolchains they need.
   - Default (no Nx): path filters (`dorny/paths-filter`, or `git diff --name-only <base>...HEAD` matched against `apps/*`, `packages/*`) set the flags; TypeScript jobs use `turbo run <task> --affected`; Python jobs run `just check`/`just test` when any Python path or `uv.lock` changed.
   - Nx tier: `nx show projects --affected --base=<ref> --withTarget <target> --json`.
 - **Composite action `.github/actions/setup-toolchains`:** takes boolean inputs (`python`, `go`, `java`, `buf`) and installs Node and pnpm always, then uv, Go, golangci-lint, buf, and Java conditionally. This removes the repeated setup preamble across jobs. Use `go-version-file: go.work` and `cache-dependency-path: '**/go.sum'` for Go, `cache: maven` for Java, and `GOTOOLCHAIN=auto` when `go.work` declares a toolchain.
-- **Quality, test, integration, and codegen-drift jobs** run `just` recipes (default) or Nx targets (`nx affected -t check`, `-t test`) against the detected base. Codegen-drift jobs regenerate and fail on any diff.
-- **Skip redundant post-merge runs:** when branch protection requires PRs to be up to date and green (or a merge queue is on), a push to `main` re-runs nothing except publishing.
+- **Quality, test, integration, and codegen-drift jobs** run the underlying commands (`pnpm run <task>`, `uv run ...`; CI does not need `just` installed) or Nx targets (`nx affected -t check`, `-t test`) against the detected base. `polyglot-monorepo.md` has the full default workflow. Codegen-drift jobs regenerate and fail on any diff.
+- **Skip redundant post-merge runs only with a merge queue or "require branches to be up to date" enabled.** Then a push to `main` re-runs nothing except publishing. Without one of those, squash merges and admin bypasses put untested commits on `main`, so keep the `push: main` trigger from the CI templates.
 
 ## PR title check
 
-Put the Conventional Commits title check in its own workflow, with `pull_request` types `[opened, edited, synchronize, reopened]`, so editing a bad title re-triggers validation without a new commit. Keep `edited` out of the main CI workflow, where it would rerun the full suite on every description tweak. Read the title through `env:` and validate with a regex such as `^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert|deps)(\([A-Za-z0-9._-]+\))?!?: .+`.
+Put the Conventional Commits title check in its own workflow, with `pull_request` types `[opened, edited, synchronize, reopened]`, so editing a bad title re-triggers validation without a new commit. Keep `edited` out of the main CI workflow, where it would rerun the full suite on every description tweak. Read the title through `env:` and validate with a regex such as `^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\([A-Za-z0-9._-]+\))?!?: .+`.
 
 ## Releases
 
@@ -101,7 +101,11 @@ Put the Conventional Commits title check in its own workflow, with `pull_request
 
 ## Dependabot
 
-Configure `.github/dependabot.yml` for every ecosystem the repo uses (`github-actions`, `npm`, `uv`, `maven`, `gomod`, `docker`, `docker-compose`) with `open-pull-requests-limit: 0`. That disables routine version-bump PRs, so pins stay deliberate, and still lets Dependabot open security-advisory PRs. Set `commit-message.prefix: deps` so those PRs pass the PR-title check, and add `deps` to the allowed types.
+Configure `.github/dependabot.yml` for every ecosystem the repo uses (`github-actions`, `npm`, `uv`, `maven`, `gomod`, `docker`, `docker-compose`).
+
+- **Code dependencies** (`npm`, `uv`, `maven`, `gomod`, `docker`): `open-pull-requests-limit: 0`. That disables routine version-bump PRs, so dependency changes stay deliberate, and still lets Dependabot open security-advisory PRs.
+- **`github-actions`:** a grouped monthly update (`schedule.interval: monthly`, `groups: {actions: {patterns: ["*"]}}`, `cooldown.default-days: 3`). SHA pins never move on their own, and security-only PRs do not cover an action that is simply majors behind, so this one ecosystem keeps routine updates on. One grouped PR a month is reviewable.
+- **Commit messages:** `commit-message.prefix: chore` with `include: scope`, which yields `chore(deps): ...`. `deps` is not a Conventional Commits type, so it would not pass the PR-title check or appear in release-please changelogs.
 
 ## Git hooks: Lefthook only
 
@@ -113,7 +117,8 @@ Add these jobs next to the pre-commit jobs from `typescript.md` and `python.md`:
 commit-msg:
   jobs:
     - name: conventional-commit
-      run: grep -Eq '^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\([A-Za-z0-9._-]+\))?!?: .+' {1} || { echo "Commit message must follow Conventional Commits"; exit 1; }
+      run: |
+        grep -Eq '^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\([A-Za-z0-9._-]+\))?!?: .+' {1} || { echo "Commit message must follow Conventional Commits"; exit 1; }
 
 pre-push:
   jobs:
