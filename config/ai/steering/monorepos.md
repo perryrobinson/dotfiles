@@ -7,6 +7,7 @@ applies_when:
   - Cross-package checks or affected-project workflows
 tags:
   - monorepo
+  - polyglot
   - nx
   - just
   - workspaces
@@ -20,7 +21,7 @@ tags:
 - In pnpm TypeScript workspaces, use Turborepo as the task runner unless the repo already uses Nx or `just`. See `typescript.md` for the standard setup.
 - Respect project graph metadata, target dependencies, and generated-code outputs before changing build orchestration.
 - In uv Python workspaces, use `just` with `uv run` as the front door and `uv add --package <member>` for dependencies. See `python.md` for the standard setup.
-- In polyglot repos, `just` is the human interface and the default scaffold is Nx-free: pnpm workspaces plus Turborepo for TypeScript, a uv workspace for Python, and `just` recipes that call both. See "Nx or not" below.
+- In polyglot repos, `just` is the human interface and the default scaffold is Nx-free: pnpm workspaces plus Turborepo for TypeScript, a uv workspace for Python, and `just` recipes that call both. See "Nx or not" below and `polyglot-monorepo.md` for the full scaffold.
 - If Nx is in use, it owns the project graph and targets; `just` recipes delegate to Nx. Never call `just` from inside an Nx target.
 - See `github-actions.md` for the affected-detection CI pattern in both tiers.
 - Use root workspace manifests as the source of truth for package manager and runtime versions.
