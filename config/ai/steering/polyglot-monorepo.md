@@ -105,11 +105,11 @@ test-py *args:
     uv run pytest {{args}}
 
 # Pre-push: only the toolchains whose files changed against origin/main.
-# TURBO_SCM_BASE is required: turbo --affected defaults to a local `main` branch and, when that is
-# missing or stale (feature branches, fresh clones), silently runs every package.
 check-affected:
     #!/usr/bin/env bash
     set -euo pipefail
+    # TURBO_SCM_BASE is required below: turbo --affected defaults to a local `main` branch and, when
+    # that is missing or stale (feature branches, fresh clones), silently runs every package.
     files=$(git diff --name-only origin/main...HEAD)
     if grep -Eq '\.(py)$|pyproject\.toml$|^uv\.lock$' <<<"$files"; then just check-py; fi
     if grep -Eq '\.(ts|tsx|js|jsx|json|css)$|^pnpm-|turbo\.json$' <<<"$files"; then TURBO_SCM_BASE=origin/main pnpm exec turbo run typecheck lint --affected; fi
