@@ -15,10 +15,12 @@
 Read these opinionated global steering docs only when the task touches the relevant area:
 
 - Monorepos, Nx, and `just`: `~/dotfiles/config/ai/steering/monorepos.md`
-- TypeScript, pnpm, Biome, Vite, and TanStack: `~/dotfiles/config/ai/steering/typescript.md`
-- Python, uv, Ruff, and ty: `~/dotfiles/config/ai/steering/python.md`
+- Repos with both pnpm TypeScript and uv Python (default scaffold, hooks, CI): `~/dotfiles/config/ai/steering/polyglot-monorepo.md`
+- TypeScript, pnpm, oxlint, oxfmt, Turborepo, Vite, and TanStack: `~/dotfiles/config/ai/steering/typescript.md`
+- Python, uv workspaces, Ruff, Pyrefly, and pytest: `~/dotfiles/config/ai/steering/python.md`
 - Go and protobuf tooling: `~/dotfiles/config/ai/steering/go.md`
 - Java, SDKMAN, Maven, Gradle, and Checkstyle: `~/dotfiles/config/ai/steering/java.md`
+- GitHub Actions workflows and action versions: `~/dotfiles/config/ai/steering/github-actions.md`
 - Git workflow and commits: `~/dotfiles/config/ai/steering/git.md`
 - Testing and verification: `~/dotfiles/config/ai/steering/testing.md`
 - Generated code: `~/dotfiles/config/ai/steering/codegen.md`
