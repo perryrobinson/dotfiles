@@ -53,7 +53,7 @@ The same setup for every new pnpm TypeScript workspace: strict `tsc`, oxlint (ty
 
 Every check exits non-zero on any finding, because agents read exit codes. A warning that exits 0 reads as success. The configs below set every rule to `error`, and lint scripts pass `--max-warnings 0`.
 
-Verified in a scratch workspace on pnpm 11 and TypeScript 7.0: `typecheck`, `lint` (type-aware), and `oxfmt --check` run and fail on bad code, the tsconfig flags below are accepted by TypeScript 7, and the Lefthook hook formats staged files, blocks a bad commit, and passes a clean one. `turbo --filter='[HEAD]'` was confirmed to select packages with staged and unstaged changes. The CI workflow and Turborepo cache hits were not run.
+Verified in a scratch workspace on pnpm 11 and TypeScript 7.0: `typecheck`, `lint` (type-aware), and `oxfmt --check` run and fail on bad code, the tsconfig flags below are accepted by TypeScript 7, and the Lefthook hook formats staged files, blocks a bad commit, and passes a clean one. `turbo --filter='[HEAD]'` was confirmed to select packages with staged and unstaged changes, a repeat `turbo run lint typecheck` was fully cached, and type-aware lint was confirmed to fail on a clean checkout without `^build` (false `no-unsafe-*` errors on a workspace import) and pass with it. The workflow file passes `actionlint` but has not run on GitHub.
 
 ### Install
 
@@ -164,6 +164,18 @@ What each flag buys an agent's feedback loop:
 ```
 
 Drop `lib` overrides for non-browser packages and add `"types": ["node"]` where Node globals are used. Extract a `tooling/tsconfig` package (`base.json`, `react-library.json`, `nextjs.json`) once 3+ packages repeat flags.
+
+A package that emits output (a library other packages import) needs a separate build config, because TypeScript 7 requires an explicit `rootDir` for emit (`TS5011`) and the package config above sets `noEmit` and includes `tests`. Add `tsconfig.build.json` and point `build` at it:
+
+```json
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": { "noEmit": false, "declaration": true, "rootDir": "src", "outDir": "dist" },
+  "include": ["src"]
+}
+```
+
+`"build": "tsc -p tsconfig.build.json"`, with `types` and `exports` in `package.json` pointing at `dist/`. Bundler-built packages (Vite, tsup) skip this.
 
 To adopt strictness in an existing repo, create `tsconfig.check.json` that extends the current config with the new flags, fix its errors, then fold the flags into the main config.
 
@@ -370,7 +382,7 @@ jobs:
 - `pnpm/action-setup` reads the version from `packageManager`, so it needs no `version` input.
 - Separate steps make a failure name its cause (type, lint, or format). `build` waits on `check` so broken code never burns build minutes.
 - The two jobs repeat the setup preamble. In a repo with more jobs, move it into a composite action (see "Polyglot monorepo pattern" in `github-actions.md`).
-- CI runs every package and relies on Turborepo's cache. To run only affected packages, use `turbo run <task> --affected` and check out with `fetch-depth: 0`; a shallow clone makes everything count as changed.
+- CI runs every package and relies on Turborepo's cache. To run only affected packages, use `turbo run <task> --affected` with `fetch-depth: 0` (a shallow clone makes everything count as changed) and `TURBO_SCM_BASE: origin/${{ github.base_ref }}` in `env`; `--affected` otherwise compares to a local `main`, and when that is missing it silently runs every package.
 - Only CI uses `--frozen-lockfile`. Agents run plain `pnpm install` locally and commit the updated lockfile.
 - `TURBO_TOKEN` and `TURBO_TEAM` enable remote caching and are optional.
 

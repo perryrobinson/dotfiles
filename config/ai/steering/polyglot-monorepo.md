@@ -22,7 +22,7 @@ This is the default scaffold for a repo that holds both TypeScript and Python. I
 
 Move to Nx only when `monorepos.md` ("Nx or not") says the repo has outgrown this.
 
-Verified in a scratch repo (pnpm 11, TypeScript 7.0, uv 0.11, Ruff 0.16, Pyrefly 1.3, Lefthook 2.2) with one TypeScript and two Python members built from the files in this doc: `pnpm install` and `uv sync` both succeed, `just check` and `just test` pass, a commit with a bad `.py` file is blocked by the Python jobs only (the TypeScript jobs do not start), a bad `.ts` file is blocked by the TypeScript jobs only, a non-conventional message is blocked by `commit-msg`, and a push from `main` is blocked. The CI workflow and composite action were not run. Two problems found while verifying are fixed above: uv rejects glob members without a `pyproject.toml`, and oxfmt formats `pyproject.toml` unless ignored.
+Verified in a scratch repo (pnpm 11, TypeScript 7.0, uv 0.11, Ruff 0.16, Pyrefly 1.3, Lefthook 2.2) with one TypeScript and two Python members built from the files in this doc: `pnpm install` and `uv sync` both succeed, `just check` and `just test` pass, a commit with a bad `.py` file is blocked by the Python jobs only (the TypeScript jobs do not start), a bad `.ts` file is blocked by the TypeScript jobs only, a non-conventional message is blocked by `commit-msg`, and a push from `main` is blocked. Also verified: the workflow files and composite action pass `actionlint`; the `detect` step's shell logic gives the right `ts`/`py` flags for docs-only, Python-only, TypeScript-only, `.github`, `pyproject.toml`-only, JSON-only, empty-base, and zero-SHA cases; `just check-affected` runs only the toolchains that changed; and type-aware lint fails on a clean checkout without `^build` and passes with it, with every task cached on a repeat run. The workflows have not run on GitHub, so the composite action's `if:` inputs and the `ci` gate job are untested at runtime. Problems found while verifying are fixed above: uv rejects glob members without a `pyproject.toml`, and oxfmt formats `pyproject.toml` unless ignored.
 
 ## Layout
 
@@ -105,12 +105,14 @@ test-py *args:
     uv run pytest {{args}}
 
 # Pre-push: only the toolchains whose files changed against origin/main.
+# TURBO_SCM_BASE is required: turbo --affected defaults to a local `main` branch and, when that is
+# missing or stale (feature branches, fresh clones), silently runs every package.
 check-affected:
     #!/usr/bin/env bash
     set -euo pipefail
     files=$(git diff --name-only origin/main...HEAD)
     if grep -Eq '\.(py)$|pyproject\.toml$|^uv\.lock$' <<<"$files"; then just check-py; fi
-    if grep -Eq '\.(ts|tsx|js|jsx|json|css)$|^pnpm-|turbo\.json$' <<<"$files"; then pnpm exec turbo run typecheck lint --affected; fi
+    if grep -Eq '\.(ts|tsx|js|jsx|json|css)$|^pnpm-|turbo\.json$' <<<"$files"; then TURBO_SCM_BASE=origin/main pnpm exec turbo run typecheck lint --affected; fi
 ```
 
 `just setup` is the one command after clone. `pnpm install` runs the root `prepare` script, which installs the git hooks, so no separate hook step exists.

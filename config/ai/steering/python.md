@@ -49,7 +49,7 @@ The same setup for every new Python project: a uv workspace with a virtual root,
 
 Every check exits non-zero on any finding, because agents read exit codes. Ruff and Pyrefly have no warning tier here; everything selected is an error.
 
-Verified in a scratch workspace (uv 0.11, Ruff 0.16, Pyrefly 1.3, pytest 9): `uv sync --locked`, `ruff check`, `ruff format --check`, `pyrefly check`, and `pytest` pass on clean code, and Ruff and Pyrefly fail on bad code, including across package boundaries. Reproduced and fixed: pytest's import-mode collision between same-named test files in two members, and Ruff `TC003` rewriting Pydantic model imports under `from __future__ import annotations`. The CI workflow, Lefthook hook, and Docker snippet were not run.
+Verified in a scratch workspace (uv 0.11, Ruff 0.16, Pyrefly 1.3, pytest 9): `uv sync --locked`, `ruff check`, `ruff format --check`, `pyrefly check`, and `pytest` pass on clean code, and Ruff and Pyrefly fail on bad code, including across package boundaries. Reproduced and fixed: pytest's import-mode collision between same-named test files in two members, and Ruff `TC003` rewriting Pydantic model imports under `from __future__ import annotations`. The Lefthook hook was verified in a polyglot scratch repo (`polyglot-monorepo.md`) and the workflow file passes `actionlint`, but the workflow has not run on GitHub and the Docker snippet was not built (no Docker on the verifying machine).
 
 ### Layout
 

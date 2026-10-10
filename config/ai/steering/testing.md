@@ -25,6 +25,7 @@ tags:
 - For Go changes, include `go fmt`, `go vet`, and relevant `go test` targets.
 - For Java changes, include the repo's compile/check target and relevant JUnit tests.
 - For generated code, run the codegen command and check for drift.
+- For CI workflows, lint them with `actionlint` and run any non-trivial shell logic locally against real commits. For git hooks and task-runner filters, exercise them in a scratch repo with a deliberately broken change; a config that parses is not evidence that it blocks or selects what it should.
 - When fixing a bug, prefer adding or updating a regression test that fails before the fix and passes after it when practical.
 - Verify the actual user-facing path when the change affects UI, API behavior, CLI behavior, Docker startup, or generated artifacts.
 - If full verification is expensive or blocked, run the closest focused check and clearly state what did and did not run.
