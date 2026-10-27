@@ -1,6 +1,6 @@
 ---
 title: Polyglot Monorepo Steering
-description: Lightweight default scaffold for a repo with TypeScript (pnpm) and Python (uv) together, without Nx. One justfile, one lefthook.yml, one CI workflow with change detection, and when to add Nx.
+description: Lightweight default scaffold for a repo with TypeScript (pnpm) and Python (uv) together, without Nx. One justfile, one lefthook.yml, full CI checks, and when to add task orchestration.
 applies_when:
   - Creating a repo that has both pnpm TypeScript and uv Python packages
   - Adding Python to a pnpm workspace or TypeScript to a uv workspace
@@ -22,7 +22,7 @@ This is the default scaffold for a repo that holds both TypeScript and Python. I
 
 Move to Nx only when `monorepos.md` ("Nx or not") says the repo has outgrown this.
 
-Verified in a scratch repo (pnpm 11, TypeScript 7.0, uv 0.11, Ruff 0.16, Pyrefly 1.3, Lefthook 2.2) with one TypeScript and two Python members built from the files in this doc: `pnpm install` and `uv sync` both succeed, `just check` and `just test` pass, a commit with a bad `.py` file is blocked by the Python jobs only (the TypeScript jobs do not start), a bad `.ts` file is blocked by the TypeScript jobs only, a non-conventional message is blocked by `commit-msg`, and a push from `main` is blocked. Also verified: the workflow files and composite action pass `actionlint`; the `detect` step's shell logic gives the right `ts`/`py` flags for docs-only, Python-only, TypeScript-only, `.github`, `pyproject.toml`-only, JSON-only, empty-base, and zero-SHA cases; `just check-affected` runs only the toolchains that changed; and type-aware lint fails on a clean checkout without `^build` and passes with it, with every task cached on a repeat run. The workflows have not run on GitHub, so the composite action's `if:` inputs and the `ci` gate job are untested at runtime. Problems found while verifying are fixed above: uv rejects glob members without a `pyproject.toml`, and oxfmt formats `pyproject.toml` unless ignored.
+Use `test/verify-ai-steering.py` for focused template checks. Before adopting the scaffold, verify a fresh workspace, clean and deliberately broken hooks, and fixture-only PRs. The example workflow has not run on GitHub.
 
 ## Layout
 
@@ -30,7 +30,6 @@ Verified in a scratch repo (pnpm 11, TypeScript 7.0, uv 0.11, Ruff 0.16, Pyrefly
 package.json              # pnpm root (private): scripts, devDependencies, packageManager
 pnpm-workspace.yaml       # packages + allowBuilds
 pnpm-lock.yaml
-turbo.json                # TypeScript tasks only
 tsconfig.base.json  .oxlintrc.json  .oxfmtrc.json   # from typescript.md
 pyproject.toml            # uv virtual root; Ruff, Pyrefly, pytest config   # from python.md
 uv.lock  .python-version  .nvmrc
@@ -51,15 +50,14 @@ packages/
 
 ## Root files
 
-- **`package.json`, `pnpm-workspace.yaml`, `turbo.json`, `tsconfig.base.json`, `.oxlintrc.json`, `.oxfmtrc.json`:** exactly as in `typescript.md`. Turborepo only sees pnpm members, so Python code is invisible to it.
+- **`package.json`, `pnpm-workspace.yaml`, `tsconfig.base.json`, `.oxlintrc.json`, `.oxfmtrc.json`:** as in the default `typescript.md` setup, using direct pnpm recursive scripts. No Turbo config is required.
 - **`pyproject.toml`:** exactly as in `python.md`, with two changes. Drop `lefthook` from the `dev` group (the pnpm root installs it), and list `[tool.uv.workspace] members` explicitly instead of globbing. Adding a Python member now means one line in each of `members`, `[tool.uv.sources]`, the `dev` group, `known-first-party`, and Pyrefly's `search-path`.
 - **`.oxfmtrc.json`:** add `"**/*.toml"` to `ignorePatterns`. oxfmt formats TOML, so without this it rewrites `pyproject.toml` and fails `format:check` on the Python manifests. Ruff owns Python; oxfmt owns the TypeScript tree.
-- **`.gitignore`:** see below. oxfmt and oxlint honor it, so ignoring `.venv` and `.turbo` there keeps both tools out of them.
+- **`.gitignore`:** see below. oxfmt and oxlint honor it, so ignoring `.venv` and `node_modules` there keeps both tools out of them.
 
 ```
 node_modules
 dist
-.turbo
 .venv
 __pycache__
 .pytest_cache
@@ -86,10 +84,7 @@ fmt:
 check: check-ts check-py
 
 check-ts:
-    pnpm run check:toolchain
-    pnpm run typecheck
-    pnpm run lint
-    pnpm run format:check
+    pnpm run check
 
 check-py:
     uv run ruff format --check .
@@ -104,47 +99,27 @@ test-ts:
 test-py *args:
     uv run pytest {{args}}
 
-# Pre-push: only the toolchains whose files changed against origin/main.
-check-affected:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    # TURBO_SCM_BASE is required below: turbo --affected defaults to a local `main` branch and, when
-    # that is missing or stale (feature branches, fresh clones), silently runs every package.
-    files=$(git diff --name-only origin/main...HEAD)
-    if grep -Eq '\.(py)$|pyproject\.toml$|^uv\.lock$' <<<"$files"; then just check-py; fi
-    if grep -Eq '\.(ts|tsx|js|jsx|json|css)$|^pnpm-|turbo\.json$' <<<"$files"; then TURBO_SCM_BASE=origin/main pnpm exec turbo run typecheck lint --affected; fi
 ```
 
 `just setup` is the one command after clone. `pnpm install` runs the root `prepare` script, which installs the git hooks, so no separate hook step exists.
 
 ## `lefthook.yml`
 
-One file for both languages. Each job has a `glob`, so a commit that touches only Python never starts the TypeScript tools.
+One file for both languages. Format first, then run complete checks. Full checks also catch fixture, asset, and shared-config edits without maintaining path filters.
 
 ```yaml
 pre-commit:
-  parallel: true
   jobs:
     - name: format-ts
       glob: "*.{ts,tsx,js,jsx,json,jsonc,css}"
       run: pnpm oxfmt --no-error-on-unmatched-pattern {staged_files}
       stage_fixed: true
-    - name: lint-ts
-      glob: "*.{ts,tsx,js,jsx}"
-      run: pnpm oxlint --max-warnings 0 {staged_files}
-    - name: typecheck-ts
-      glob: "*.{ts,tsx,json}"
-      run: pnpm turbo run typecheck --filter='[HEAD]'
     - name: format-py
       glob: "*.py"
       run: uv run ruff format --force-exclude {staged_files}
       stage_fixed: true
-    - name: lint-py
-      glob: "*.py"
-      run: uv run ruff check --force-exclude {staged_files}
-    - name: typecheck-py
-      glob: "*.py"
-      run: uv run pyrefly check
+    - name: checks
+      run: just check
 
 commit-msg:
   jobs:
@@ -156,15 +131,15 @@ pre-push:
   jobs:
     - name: no-push-from-main
       run: test "$(git branch --show-current)" != main || { echo "Do not push from main"; exit 1; }
-    - name: affected-checks
-      run: just check-affected
+    - name: checks
+      run: just check
 ```
 
 Lefthook is the only hook manager here; do not add `pre-commit`.
 
 ## CI
 
-One workflow, one cheap `detect` job, and one gate job. Jobs for a toolchain are skipped when none of its files changed.
+One workflow runs both toolchains on every PR/push. This includes fixtures, assets, lockfiles, and shared configuration. Add change detection only if full checks become costly and project ownership/dependencies can be verified.
 
 `.github/actions/setup-toolchains/action.yml`:
 
@@ -215,39 +190,8 @@ concurrency:
   group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
-env:
-  TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
-  TURBO_TEAM: ${{ vars.TURBO_TEAM }}
-
 jobs:
-  detect:
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    outputs:
-      ts: ${{ steps.changes.outputs.ts }}
-      py: ${{ steps.changes.outputs.py }}
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          fetch-depth: 0
-      - id: changes
-        env:
-          BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
-        run: |
-          ts=true; py=true
-          if [ -n "$BASE" ] && git cat-file -e "$BASE^{commit}" 2>/dev/null; then
-            files=$(git diff --name-only "$BASE" HEAD)
-            ts=false; py=false
-            grep -Eq '\.(ts|tsx|js|jsx|mjs|cjs|json|jsonc|css)$|^pnpm-|^\.nvmrc$' <<<"$files" && ts=true
-            grep -Eq '\.py$|pyproject\.toml$|^uv\.lock$|^\.python-version$' <<<"$files" && py=true
-            grep -Eq '^\.github/' <<<"$files" && { ts=true; py=true; }
-          fi
-          echo "ts=$ts" >> "$GITHUB_OUTPUT"
-          echo "py=$py" >> "$GITHUB_OUTPUT"
-
   ts:
-    needs: detect
-    if: needs.detect.outputs.ts == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -255,16 +199,10 @@ jobs:
       - uses: ./.github/actions/setup-toolchains
         with:
           node: "true"
-      - run: pnpm run check:toolchain
-      - run: pnpm run typecheck
-      - run: pnpm run lint
-      - run: pnpm run format:check
-      - run: pnpm run build
+      - run: pnpm run check
       - run: pnpm run test
 
   py:
-    needs: detect
-    if: needs.detect.outputs.py == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -279,31 +217,30 @@ jobs:
 
   ci:
     if: always()
-    needs: [detect, ts, py]
+    needs: [ts, py]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
       - env:
           RESULTS: ${{ join(needs.*.result, ' ') }}
         run: |
-          case " $RESULTS " in *" failure "*|*" cancelled "*) exit 1 ;; esac
+          test "$RESULTS" = "success success"
 ```
 
-- Make `ci` the only required status check in branch protection. A skipped `ts` or `py` job is neither a pass nor a fail for a required check, and the gate job turns "nothing to run" into a clean pass while any real failure still fails it.
-- Skipped jobs are correct: a docs-only PR runs only `detect` and `ci`.
-- `detect` treats an unknown base (first push, force-push, shallow history) as "everything changed". A false run is cheap; a false skip is not.
-- `pnpm run build` and `test` need `^build` ordering, which Turborepo already handles. If the repo has many TypeScript packages, split `ts` into `check` and `build` jobs as in `typescript.md`.
+- Make `ci` the only required status check in branch protection. It passes only when both language jobs succeed; skipped, failed, or cancelled jobs fail the gate.
+- Run both toolchains even for docs-only PRs at this scale. Fixture and shared-config changes cannot silently skip tests.
+- `pnpm run check` builds dependency declarations before TypeScript and type-aware lint need them. The default test script also builds dependencies, so `just test` works independently.
 - When Python work needs a database or other services, add that to the `py` job; do not move it into the shared composite action.
 
 ## Applying to a repo
 
 1. Create the root `package.json`, `pnpm-workspace.yaml`, and `pyproject.toml` from `typescript.md` and `python.md`. Run `pnpm install` and `uv sync`; both must succeed with members from each language present.
-2. Write the language configs (`tsconfig.base.json`, `.oxlintrc.json`, `.oxfmtrc.json`, `turbo.json`, Ruff/Pyrefly/pytest tables) and make `pnpm run typecheck` and `uv run pyrefly check` pass on the first members.
+2. Write the language configs (`tsconfig.base.json`, `.oxlintrc.json`, `.oxfmtrc.json`, Ruff/Pyrefly/pytest tables) and make `pnpm run check` and `uv run pyrefly check` pass on the first members.
 3. Write `justfile`; confirm `just check` and `just test` pass.
-4. Write `lefthook.yml`; run `pnpm install` to register the hooks. The very first commit in a new repo has no `HEAD` for turbo's `--filter='[HEAD]'` to compare against, so make it with `git commit --no-verify` once. Make one broken `.ts` commit and one broken `.py` commit and confirm each is blocked by its own job only.
-5. Write the composite action and `ci.yml`; confirm a TypeScript-only PR runs `ts` but skips `py`, and the reverse.
+4. Write `lefthook.yml`; run `pnpm install` to register the hooks. Confirm the first clean commit works without bypassing hooks, and that a broken TypeScript or Python change blocks a commit and pre-push.
+5. Write the composite action and `ci.yml`; confirm both language jobs run, including for fixture-only and shared-config PRs, and either failure fails `ci`.
 6. Set the `ci` job as the single required check.
 
 ## Growing out of this scaffold
 
-Add Nx when `monorepos.md` says so. The migration keeps `just` as the interface, replaces the `detect` shell step with `nx show projects --affected`, and wraps the existing commands as Nx targets. Do not add Go or Java to this scaffold by copying the TypeScript pattern; at that point the project graph is the problem Nx exists to solve.
+Keep `just` as the interface. Add the optional Turbo setup from `typescript.md` when TypeScript caching saves meaningful time. Add Nx when cross-language dependencies, codegen ordering, or boundary enforcement need a project graph; see `monorepos.md`. More languages alone do not require a new runner. Preserve full CI coverage until any affected selection is verified against fixtures, shared configs, and downstream consumers.

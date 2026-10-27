@@ -1,6 +1,6 @@
 ---
 title: GitHub Actions Steering
-description: Current action versions, pinning policy, and reusable workflow patterns (least-privilege permissions, affected detection, composite toolchain setup, PR-title checks, release automation, Dependabot).
+description: Current action versions, pinning policy, and reusable workflow patterns (least-privilege permissions, full checks, composite toolchain setup, PR-title checks, release automation, Dependabot).
 applies_when:
   - Creating or editing .github/workflows or .github/actions
   - Bumping GitHub Action versions
@@ -80,14 +80,12 @@ Pins only stay current if something updates them; see "Dependabot" below.
 
 ## Polyglot monorepo pattern
 
-Pick the tier by the rules in `monorepos.md` ("Nx or not"); the complete no-Nx scaffold is in `polyglot-monorepo.md`. Both tiers share one CI workflow with a `detect` job, a composite toolchain-setup action, and a codegen-drift job.
+The default in `polyglot-monorepo.md` uses one workflow with full TypeScript and Python jobs and one required gate. Run all checks/tests on every PR/push so fixture, asset, and shared-config changes are covered.
 
-- **`detect` job:** computes which parts changed and per-language flags (needs Python, Go, Java, buf). Check out with `fetch-depth: 0`. Downstream jobs run only for affected parts and install only the toolchains they need.
-  - Default (no Nx): path filters (`dorny/paths-filter`, or `git diff --name-only <base>...HEAD` matched against `apps/*`, `packages/*`) set the flags; TypeScript jobs use `turbo run <task> --affected`; Python jobs run `just check`/`just test` when any Python path or `uv.lock` changed.
-  - Nx tier: `nx show projects --affected --base=<ref> --withTarget <target> --json`.
-- **Composite action `.github/actions/setup-toolchains`:** takes boolean inputs (`python`, `go`, `java`, `buf`) and installs Node and pnpm always, then uv, Go, golangci-lint, buf, and Java conditionally. This removes the repeated setup preamble across jobs. Use `go-version-file: go.work` and `cache-dependency-path: '**/go.sum'` for Go, `cache: maven` for Java, and `GOTOOLCHAIN=auto` when `go.work` declares a toolchain.
-- **Quality, test, integration, and codegen-drift jobs** run the underlying commands (`pnpm run <task>`, `uv run ...`; CI does not need `just` installed) or Nx targets (`nx affected -t check`, `-t test`) against the detected base. `polyglot-monorepo.md` has the full default workflow. Codegen-drift jobs regenerate and fail on any diff.
-- **Skip redundant post-merge runs only with a merge queue or "require branches to be up to date" enabled.** Then a push to `main` re-runs nothing except publishing. Without one of those, squash merges and admin bypasses put untested commits on `main`, so keep the `push: main` trigger from the CI templates.
+- **Composite action `.github/actions/setup-toolchains`:** takes string inputs (`node`, `python`, default `"false"`) and installs only the toolchain each job requests, plus its locked dependencies. Add other language inputs only when needed. This removes repeated setup without inventing a project graph.
+- **Quality, test, integration, and codegen-drift jobs** run package scripts or the repo's existing runner. Codegen-drift jobs regenerate and fail on any diff. Keep `just` as the local interface; CI can invoke the underlying commands directly.
+- **Affected selection is optional:** add it only when full runs are costly. Use the existing dependency graph when available, and cover all files owned by each project, downstream consumers, fixtures/assets, and shared configuration. Unknown inputs must run checks rather than skip them. Test selection against real changes before making it a required gate; extension-only filters are insufficient.
+- **Keep `push: main` validation** unless a merge queue or equivalent protection guarantees the merged result was tested. Publishing should consume verified outputs.
 
 ## PR title check
 
@@ -124,8 +122,8 @@ pre-push:
   jobs:
     - name: no-push-from-main
       run: test "$(git branch --show-current)" != main || { echo "Do not push from main"; exit 1; }
-    - name: affected-checks
-      run: just check-affected
+    - name: checks
+      run: pnpm run check
 ```
 
-`{1}` is the commit message file. `lefthook install` registers all hook types found in the file,; run it from the root `prepare` script in pnpm repos, or add a `setup` recipe (`lefthook install`) to the `justfile` in uv-only repos. Keep the commit-msg regex in sync with the PR-title check.
+`{1}` is the commit message file. The quality job above is for TypeScript; use `run: just check` in Python-only and polyglot repos, whose templates define that recipe. Do not reference `check-affected` unless the repo actually provides and verifies it. `lefthook install` registers all configured hooks; pnpm repos run it through `prepare`, while uv-only repos run `uv run lefthook install` through `just setup`. Verify pre-push from a normal shell on both a clean and deliberately broken feature branch. Keep the commit-msg regex in sync with the PR-title check.

@@ -1,6 +1,6 @@
 ---
 title: TypeScript Steering
-description: Opinionated defaults for TypeScript and JavaScript workspaces, the standard strict setup (tsconfig, oxlint, oxfmt, Turborepo, Lefthook, CI), app structure, SPAs, validation, data fetching, and generated TypeScript.
+description: Opinionated defaults for TypeScript and JavaScript workspaces, the standard strict setup (tsconfig, oxlint, oxfmt, Lefthook, CI) and optional Turborepo caching, app structure, SPAs, validation, data fetching, and generated TypeScript.
 applies_when:
   - TypeScript or JavaScript project changes
   - TypeScript project setup
@@ -49,16 +49,16 @@ tags:
 
 ## Standard Setup
 
-The same setup for every new pnpm TypeScript workspace: strict `tsc`, oxlint (type-aware), oxfmt, Lefthook, Turborepo. Write these files verbatim, then adjust only `paths`, `lib`, workspace globs, and package names. An existing repo keeps its own tools; add the missing pieces around them and match its config style.
+Start with package scripts, strict `tsc`, oxlint (type-aware), oxfmt, and Lefthook. Workspaces use pnpm recursive commands in dependency order; a single-package app calls the tools directly. Adapt package names, runtime/compiler options, and build/test commands to the project. Keep an existing repo's tools and config style. Add Turborepo only when repeated work is expensive enough to justify caching; see the optional section below.
 
 Every check exits non-zero on any finding, because agents read exit codes. A warning that exits 0 reads as success. The configs below set every rule to `error`, and lint scripts pass `--max-warnings 0`.
 
-Verified in a scratch workspace on pnpm 11 and TypeScript 7.0: `typecheck`, `lint` (type-aware), and `oxfmt --check` run and fail on bad code, the tsconfig flags below are accepted by TypeScript 7, and the Lefthook hook formats staged files, blocks a bad commit, and passes a clean one. `turbo --filter='[HEAD]'` was confirmed to select packages with staged and unstaged changes, a repeat `turbo run lint typecheck` was fully cached, and type-aware lint was confirmed to fail on a clean checkout without `^build` (false `no-unsafe-*` errors on a workspace import) and pass with it. The workflow file passes `actionlint` but has not run on GitHub.
+Run the focused checks in `test/verify-ai-steering.py` after editing these templates. For adoption, also exercise a clean two-package workspace, the installed hooks, and the workflow on a branch. The example workflow has not run on GitHub.
 
 ### Install
 
 ```bash
-pnpm add -D -w typescript@^7 oxlint oxlint-tsgolint oxfmt turbo lefthook
+pnpm add -D -w typescript@^7 oxlint oxlint-tsgolint oxfmt lefthook
 ```
 
 The `^7` range keeps the workspace on the native compiler; a bare `typescript` would take whatever the lockfile already holds. `oxlint-tsgolint` provides the type-aware rules. pnpm 11 blocks dependency build scripts, so approve Lefthook's postinstall in `pnpm-workspace.yaml` (`allowBuilds`, below) or the hook never installs.
@@ -73,10 +73,11 @@ Pin `packageManager` to the pnpm version in use (check `pnpm --version`).
   "type": "module",
   "packageManager": "pnpm@<current>",
   "scripts": {
-    "build": "turbo run build",
-    "typecheck": "turbo run typecheck",
-    "lint": "turbo run lint",
-    "test": "turbo run test",
+    "build": "pnpm -r run build",
+    "typecheck": "pnpm -r run typecheck",
+    "lint": "pnpm -r run lint",
+    "test": "pnpm run build && pnpm -r run test",
+    "check": "pnpm run check:toolchain && pnpm run build && pnpm run typecheck && pnpm run lint && pnpm run format:check",
     "format": "oxfmt",
     "format:check": "oxfmt --check",
     "check:toolchain": "tsc --version | grep -q '^Version 7\\.'",
@@ -89,7 +90,7 @@ Pin `packageManager` to the pnpm version in use (check `pnpm --version`).
 
 ### Package `package.json` scripts
 
-Each package defines the tasks Turborepo runs. Dev dependencies, including `typescript`, live at the root only, so every package uses one TypeScript version and calls the binaries directly. Do not add `typescript` to a package's own `devDependencies`.
+Each workspace package defines the scripts pnpm runs. The recursive commands exclude the root and run in dependency order. Dev dependencies, including `typescript`, live at the root only, so every package uses one TypeScript version and calls the binaries directly. Do not add `typescript` to a package's own `devDependencies`.
 
 ```json
 {
@@ -101,6 +102,8 @@ Each package defines the tasks Turborepo runs. Dev dependencies, including `type
   }
 }
 ```
+
+Use `pnpm run check` on a clean checkout: it builds workspace dependencies before TypeScript and type-aware lint resolve imports from `dist/`. `test` also builds first. When calling `typecheck` or `lint` separately, run `pnpm run build` first if dependency declarations have not been built. For a single-package app, put the package scripts above at the root instead of the recursive scripts; keep `check`, formatting, the toolchain guard, and `prepare`.
 
 ### `pnpm-workspace.yaml`
 
@@ -242,82 +245,28 @@ For React packages, add the `react` plugin and `react/rules-of-hooks` as `error`
 }
 ```
 
-`oxfmt` writes in place; `oxfmt --check` exits non-zero on any diff. oxfmt also honors `.gitignore`. Formatting runs automatically in pre-commit, so it is never an agent task. `oxfmt --migrate=prettier` or `--migrate=biome` converts an existing config.
-
-### `turbo.json` (root)
-
-```json
-{
-  "$schema": "https://turborepo.dev/schema.json",
-  "ui": "stream",
-  "tasks": {
-    "build": {
-      "dependsOn": ["^build"],
-      "inputs": ["$TURBO_DEFAULT$", "!**/*.md"],
-      "outputs": ["dist/**", ".next/**", "!.next/cache/**"]
-    },
-    "typecheck": {
-      "dependsOn": ["^build"],
-      "inputs": [
-        "src/**",
-        "tests/**",
-        "tsconfig.json",
-        "package.json",
-        "$TURBO_ROOT$/tsconfig.base.json"
-      ],
-      "outputs": []
-    },
-    "lint": {
-      "dependsOn": ["^build"],
-      "inputs": [
-        "src/**",
-        "tests/**",
-        "tsconfig.json",
-        "package.json",
-        "$TURBO_ROOT$/.oxlintrc.json",
-        "$TURBO_ROOT$/tsconfig.base.json"
-      ],
-      "outputs": []
-    },
-    "test": {
-      "dependsOn": ["^build"],
-      "outputs": ["coverage/**"]
-    },
-    "dev": { "cache": false, "persistent": true }
-  }
-}
-```
-
-- `^build` on `typecheck`, `lint`, and `test` gives each package built types from its dependencies. Type-aware lint resolves workspace imports the same way `tsc` does, so without it a clean checkout lints against missing types.
-- Keep `inputs` precise. `inputs: ["**"]` defeats the cache, and cache hits are what keep an agent's repeated `typecheck` and `lint` runs near-instant.
-- `ui: "stream"` keeps output as plain, ordered logs an agent can read; humans may switch to `"tui"` locally.
-- Add `"$TURBO_ROOT$/<file>"` to a task's `inputs` whenever a root config file changes that task's result.
+`oxfmt` writes in place; `oxfmt --check` exits non-zero on any diff. oxfmt also honors `.gitignore`. The hook formats matching staged files; run `pnpm run format` for other formatter-supported files and initial setup. `oxfmt --migrate=prettier` or `--migrate=biome` converts an existing config.
 
 ### `lefthook.yml` (root)
 
 ```yaml
 pre-commit:
-  parallel: true
   jobs:
     - name: format
       glob: "*.{ts,tsx,js,jsx,json,jsonc,css}"
       run: pnpm oxfmt --no-error-on-unmatched-pattern {staged_files}
       stage_fixed: true
-    - name: oxlint
-      glob: "*.{ts,tsx,js,jsx}"
-      run: pnpm oxlint --max-warnings 0 {staged_files}
-    - name: typecheck
-      run: pnpm turbo run typecheck --filter='[HEAD]'
+    - name: checks
+      run: pnpm run check
 ```
 
-`--filter='[HEAD]'` typechecks only packages with changes since HEAD, including staged and unstaged edits, which keeps the hook fast in a large monorepo. A repo on Husky keeps Husky and adds the same filter to its hook. `lefthook install` runs through the root `prepare` script.
+Run formatting before checks, without `parallel`, so lint/typecheck never race a first dependency build. The checks work before the first commit too. A repo on Husky keeps its hook manager and runs the same commands. `lefthook install` runs through the root `prepare` script. Add the shared `commit-msg`/branch guard from `github-actions.md`; the TypeScript pre-push quality job runs `pnpm run check`.
 
 ### `.gitignore` additions
 
 ```
 node_modules
 dist
-.turbo
 ```
 
 ### `.github/workflows/ci.yml`
@@ -337,10 +286,6 @@ concurrency:
   group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
-env:
-  TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
-  TURBO_TEAM: ${{ vars.TURBO_TEAM }}
-
 jobs:
   check:
     runs-on: ubuntu-latest
@@ -353,49 +298,55 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - name: Toolchain
-        run: pnpm run check:toolchain
-      - name: Type check
-        run: pnpm run typecheck
-      - name: Lint
-        run: pnpm run lint
-      - name: Format check
-        run: pnpm run format:check
-
-  build:
-    needs: check
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version-file: .nvmrc
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm run build
-      - run: pnpm run test
+      - name: Checks (build dependencies, types, lint, formatting)
+        run: pnpm run check
+      - name: Tests
+        run: pnpm run test
 ```
 
 - Every action is pinned to a full commit SHA, per `github-actions.md`; that file holds the current pins.
 - `pnpm/action-setup` reads the version from `packageManager`, so it needs no `version` input.
-- Separate steps make a failure name its cause (type, lint, or format). `build` waits on `check` so broken code never burns build minutes.
-- The two jobs repeat the setup preamble. In a repo with more jobs, move it into a composite action (see "Polyglot monorepo pattern" in `github-actions.md`).
-- CI runs every package and relies on Turborepo's cache. To run only affected packages, use `turbo run <task> --affected` with `fetch-depth: 0` (a shallow clone makes everything count as changed) and `TURBO_SCM_BASE: origin/${{ github.base_ref }}` in `env`; `--affected` otherwise compares to a local `main`, and when that is missing it silently runs every package.
+- Run all packages for every PR/push, including fixture, asset, and shared-config changes. Add affected selection only after full checks become costly and its coverage is verified.
+- `check` builds packages before types and type-aware lint need their declarations. The default test script builds too, so it also works independently.
 - Only CI uses `--frozen-lockfile`. Agents run plain `pnpm install` locally and commit the updated lockfile.
-- `TURBO_TOKEN` and `TURBO_TEAM` enable remote caching and are optional.
 
 ### Applying to a repo
 
 Run in this order; each step is verifiable before the next:
 
-1. Install the dev dependencies, pin `packageManager`, and write `pnpm-workspace.yaml`, with `allowBuilds` for `lefthook`.
-2. Write `tsconfig.base.json` and each package's `tsconfig.json`. Run `pnpm run typecheck` and fix every error. Strict flags on an existing codebase surface many.
-3. Write `.oxlintrc.json` and the package `lint` scripts. Run `pnpm run lint`. Fix `no-explicit-any` and the `no-unsafe-*` errors first, since they cascade.
-4. Write `.oxfmtrc.json`, run `pnpm run format`, then `pnpm run format:check`.
-5. Write `turbo.json`; confirm a second `pnpm run typecheck` reports cache hits.
-6. Write `lefthook.yml`, run `pnpm install` (the `prepare` script installs the hook), and make a deliberately broken commit to confirm the hook blocks it.
-7. Write the CI workflow and confirm both jobs pass on a branch.
+1. Write the root/package manifests and `pnpm-workspace.yaml`, including `allowBuilds` for Lefthook, then install the dev dependencies and pin `packageManager`.
+2. Write compiler, lint, and format configs and real package build/test scripts. Run `pnpm run format`, then `pnpm run check` and `pnpm run test`.
+3. Verify from a clean two-package checkout that dependency builds finish before checks resolve workspace imports.
+4. Write `lefthook.yml`, run `pnpm install` to register hooks, and confirm a deliberate lint/type error blocks a commit and pre-push. A clean feature branch must pass.
+5. Write the CI workflow and confirm it passes on a branch, including a fixture-only change.
+
+### Optional: Turborepo
+
+Keep an existing useful Turbo setup. Add it to a new workspace when dependency-aware caching measurably saves time or task dependencies exceed pnpm's package ordering. A small app does not need it. Install `turbo` at the root and replace recursive task scripts with `turbo run <task>`; keep the root `check` interface. Add `.turbo` to `.gitignore`.
+
+```json
+{
+  "$schema": "https://turborepo.dev/schema.json",
+  "ui": "stream",
+  "globalDependencies": ["tsconfig.base.json", ".oxlintrc.json"],
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$"],
+      "outputs": ["dist/**", ".next/**", "!.next/cache/**"]
+    },
+    "typecheck": { "dependsOn": ["^build"], "outputs": [] },
+    "lint": { "dependsOn": ["^build"], "outputs": [] },
+    "test": { "dependsOn": ["^build"], "outputs": ["coverage/**"] },
+    "dev": { "cache": false, "persistent": true }
+  }
+}
+```
+
+- The default inputs include tracked package files, including declaration files, scripts, fixtures, and assets outside `src/`. Custom `inputs` replace these defaults; retain `$TURBO_DEFAULT$` when adding inputs. More complete inputs reduce cache hits but keep results correct.
+- Root configs affect every package here, so `globalDependencies` invalidates all tasks when they change. Add other shared configs and environment inputs when tasks actually read them. Keep output patterns aligned with the build tool.
+- `^build` gives typecheck, type-aware lint, and tests their dependencies' built declarations on a clean checkout.
+- Verify both repeated-run cache hits and invalidation: change an included package-root `.d.ts`, a linted script outside `src/`, a root compiler config, and a test fixture. Each affected task must rerun and fail on deliberately bad input.
+- Start with the full task set. If later adding `--affected`, configure and verify its Git base/history and dependent selection; do not use extension-only shell filters as a substitute for the dependency graph.
 
 In a repo that also has Python, do not apply this file and `python.md` side by side. Use `polyglot-monorepo.md`, which merges the root manifest, hooks, and CI.

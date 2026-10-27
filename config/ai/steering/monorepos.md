@@ -17,25 +17,22 @@ tags:
 
 - Prefer a single command runner as the front door when a repo provides one, especially `just`.
 - In mixed-language repos, prefer workspace-aware commands over per-package ad hoc installs.
-- Prefer affected-project checks when the repo supports them through Nx, Turborepo (`--filter='[HEAD]'`), or similar tooling.
-- In pnpm TypeScript workspaces, use Turborepo as the task runner unless the repo already uses Nx or `just`. See `typescript.md` for the standard setup.
+- Use full checks by default. Preserve an existing verified affected-project workflow; add one only when full checks become costly and dependency/fixture/config coverage is proven.
+- In pnpm TypeScript workspaces, start with package scripts and pnpm recursive commands in dependency order. Keep a useful existing runner; add Turbo only when caching or task dependencies justify it. See `typescript.md`.
 - Respect project graph metadata, target dependencies, and generated-code outputs before changing build orchestration.
 - In uv Python workspaces, use `just` with `uv run` as the front door and `uv add --package <member>` for dependencies. See `python.md` for the standard setup.
-- In polyglot repos, `just` is the human interface and the default scaffold is Nx-free: pnpm workspaces plus Turborepo for TypeScript, a uv workspace for Python, and `just` recipes that call both. See "Nx or not" below and `polyglot-monorepo.md` for the full scaffold.
+- In polyglot repos, `just` is the human interface and the default scaffold is Nx-free: pnpm workspaces and recursive package scripts for TypeScript, a uv workspace for Python, and `just` recipes that call both. See "Nx or not" below and `polyglot-monorepo.md` for the full scaffold.
 - If Nx is in use, it owns the project graph and targets; `just` recipes delegate to Nx. Never call `just` from inside an Nx target.
-- See `github-actions.md` for the affected-detection CI pattern in both tiers.
+- See `github-actions.md` for full CI coverage by default and requirements before optimizing with affected selection.
 - Use root workspace manifests as the source of truth for package manager and runtime versions.
 - Do not introduce naming conventions from one repo into another repo unless the user explicitly asks for that convention.
 
 ## Nx or not
 
-Default to no Nx. A new scaffold is pnpm workspaces + Turborepo (TypeScript), a uv workspace (Python), `just` as the front door, one `lefthook.yml`, and one CI workflow with path-based `detect`. It has no extra graph to configure or keep in sync.
+Default to package scripts and native workspace commands, with `just` as the interface for mixed-language repos. Run the full suite in CI. Keep an existing runner that works.
 
-Adopt Nx when two or more of these are true, not before:
+Add Turborepo when repeated TypeScript builds/checks are expensive enough for dependency-aware caching to save meaningful time, or task dependencies exceed pnpm's package ordering. Measure the benefit and verify invalidation before relying on the cache.
 
-- Go, Java, or other languages join the graph and need real project-to-project dependencies, not just path filters.
-- About 10+ projects, or CI time is dominated by running unaffected work that path filters cannot narrow.
-- Codegen outputs (protobuf, OpenAPI) feed projects in several languages and the order must be derived, not hand-written.
-- You need module-boundary enforcement, generators, or one remote cache and affected graph across all languages.
+Choose Nx when the repo needs a cross-language project graph, derived codegen ordering, module-boundary enforcement, generators, or a shared affected/cache model. One concrete requirement can justify it; project count or another language alone is not a reason to migrate.
 
-Migrating later is cheap because `just` stays the interface: add `nx.json` and `project.json` targets that wrap the existing commands, point recipes at `nx run`/`nx affected`, and switch the CI `detect` job to `nx show projects --affected`. Do not add Nx to an existing repo that works without it unless the user asks.
+Keep `just` as the interface during a migration and point recipes at the chosen runner. Account for graph configuration and cache correctness as maintenance costs. Do not add a new runner to an existing repo that works without it unless the user asks.

@@ -20,8 +20,8 @@ tags:
 - Run the narrowest relevant formatter, typecheck, lint, and tests after code changes.
 - Prefer repo-provided commands such as `just check`, `just test`, Nx targets, package filters, or affected checks.
 - Use focused checks first while iterating, then run broader repo-level or affected checks before committing or claiming completion.
-- For TypeScript changes, run `pnpm run format:check`, `lint` (oxlint), `typecheck` (`tsc`, TypeScript 7), and relevant tests. Scope to changed packages with `turbo run <task> --filter=<package>`.
-- For Python changes, run `uv run ruff format --check .`, `ruff check .`, `pyrefly check`, and relevant pytest targets (`just check` and `just test` when the repo has them).
+- For TypeScript changes, use the repo's check scripts and relevant tests. The new-project default is `pnpm run check` (dependency builds, TypeScript, oxlint, formatting), then `pnpm run test`. Scope package work with `pnpm --filter <package> run <task>` after building needed dependencies; use Turbo/Nx filters only when the repo already provides them.
+- For Python changes, use Ruff format/check, the repo's typechecker, and relevant pytest targets (`just check` and `just test` when provided). Pyrefly is the new-project default; keep mypy, pyright, or ty in existing repos.
 - For Go changes, include `go fmt`, `go vet`, and relevant `go test` targets.
 - For Java changes, include the repo's compile/check target and relevant JUnit tests.
 - For generated code, run the codegen command and check for drift.
@@ -31,3 +31,5 @@ tags:
 - If full verification is expensive or blocked, run the closest focused check and clearly state what did and did not run.
 - Report verification with command names and outcomes, not vague statements.
 - Do not claim work is complete without fresh verification evidence from this machine.
+
+- When editing the reusable AI templates, run `rtk uv run --no-project test/verify-ai-steering.py`, then exercise changed command paths in a fresh scratch repo. Include clean and failing checks, dependency build ordering, installed pre-push hooks, and runtime FastAPI annotations. Cached/affected workflows also need invalidation and fixture/shared-config cases.

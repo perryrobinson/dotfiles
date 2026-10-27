@@ -45,11 +45,11 @@ tags:
 
 ## Standard Setup
 
-The same setup for every new Python project: a uv workspace with a virtual root, `src` layout members, Ruff, Pyrefly (strict), pytest, and `just` as the front door. Write these files verbatim, then adjust the Python version, package names, and the `search-path` and `known-first-party` lists. A single-package project uses the same files without the workspace tables. An existing repo keeps its own tools; add the missing pieces around them.
+Default setup for new multi-package Python projects: a uv workspace with a virtual root, `src` layout members, Ruff, Pyrefly (strict), pytest, and `just` as the front door. Adapt these files to the project, including the Python version, package names, and the `search-path` and `known-first-party` lists. A single-package project uses the same files without the workspace tables. An existing repo keeps its own tools; add the missing pieces around them.
 
 Every check exits non-zero on any finding, because agents read exit codes. Ruff and Pyrefly have no warning tier here; everything selected is an error.
 
-Verified in a scratch workspace (uv 0.11, Ruff 0.16, Pyrefly 1.3, pytest 9): `uv sync --locked`, `ruff check`, `ruff format --check`, `pyrefly check`, and `pytest` pass on clean code, and Ruff and Pyrefly fail on bad code, including across package boundaries. Reproduced and fixed: pytest's import-mode collision between same-named test files in two members, and Ruff `TC003` rewriting Pydantic model imports under `from __future__ import annotations`. The Lefthook hook was verified in a polyglot scratch repo (`polyglot-monorepo.md`) and the workflow file passes `actionlint`, but the workflow has not run on GitHub and the Docker snippet was not built (no Docker on the verifying machine).
+Run `rtk uv run --no-project test/verify-ai-steering.py` after editing these templates. It checks manifest syntax, the Uvicorn dependency, and Ruff plus runtime Pydantic/FastAPI annotations. Before adoption, also exercise a fresh uv workspace, same-named tests in two members, and installed hooks from a normal shell. The example workflow has not run on GitHub, and the Docker snippet has not been built.
 
 ### Layout
 
@@ -140,10 +140,29 @@ search-path = ["packages/common/src", "apps/api/src"]
 - `package = false` and no `[build-system]` make the root virtual: it installs nothing itself. Members come in through `dev`, so a plain `uv sync` installs every member editable plus the tooling.
 - Every member listed in `[tool.uv.workspace]` and used by another member needs `{ workspace = true }` in `[tool.uv.sources]`. Add it to the root `sources` and `dev` group so the root environment includes it, and to each depending member's own `sources`.
 - Ruff's `TID252` (with `ban-relative-imports = "all"`) enforces absolute imports. `TC` moves type-only imports under `TYPE_CHECKING`. `T20` bans `print`, and `S`/`ANN` catch security and missing-annotation issues.
-- `[tool.ruff.lint.flake8-type-checking]` is required for Pydantic and FastAPI. `TC` moves annotation-only imports under `TYPE_CHECKING`, but Pydantic models and FastAPI signatures read annotations at runtime. With `from __future__ import annotations` (or any quoted annotation), `ruff check --fix` otherwise rewrites model imports and the app fails at import. List any other runtime-evaluated base class (SQLModel, for example) there too.
+- `[tool.ruff.lint.flake8-type-checking]` protects the listed Pydantic classes/decorators. Add other runtime-evaluated base classes (SQLModel, for example) when used. Ordinary FastAPI route decorators are not covered by this list: keep their annotation imports available at runtime, using a targeted `# noqa: TC003` (or TC001/TC002 for first-/third-party imports). Safe `ruff check --fix` reports these findings without moving the imports; applying the unsafe move can break OpenAPI generation or requests. Do not apply unsafe fixes blindly.
 - `--import-mode=importlib` is required because each member has its own `tests/` directory. Under the default import mode, two members with `tests/test_models.py` fail collection with an import-file mismatch.
 - Add `"D"` with `convention = "google"` only if the repo wants docstring enforcement.
 - Pyrefly's `strict` preset adds `implicit-any` and `missing-override-decorator` on top of the default checks. Do not weaken it; fix the code.
+
+#### FastAPI runtime annotation imports
+
+```python
+from __future__ import annotations
+
+from datetime import date  # noqa: TC003 -- FastAPI resolves route annotations at runtime.
+
+from fastapi import FastAPI
+
+app = FastAPI()
+
+
+@app.get("/")
+def read(day: date) -> str:
+    return str(day)
+```
+
+Verify `app.openapi()` and a request to `/?day=2026-10-26` after formatting/linting. Pydantic model checks alone do not exercise route signatures. Uvicorn belongs in the API member's runtime dependencies because the Docker entrypoint launches it.
 
 #### Pyrefly gotcha: `search-path` is mandatory in a workspace
 
@@ -172,7 +191,7 @@ An app that depends on it (`apps/api/pyproject.toml`):
 name = "acme-api"
 version = "0.0.0"
 requires-python = ">=3.13"
-dependencies = ["acme-common", "fastapi>=0.115"]
+dependencies = ["acme-common", "fastapi>=0.115", "uvicorn>=0.30"]
 
 [tool.uv.sources]
 acme-common = { workspace = true }
@@ -258,7 +277,7 @@ pre-commit:
       run: uv run pyrefly check
 ```
 
-Pyrefly runs project-wide on each commit; it is fast enough that checking only staged files is unnecessary. `--force-exclude` keeps Ruff's `exclude` (generated protobuf, migrations) in force for explicitly passed files. `lefthook` comes from the root `dev` group; `just setup` installs the hooks. Lefthook is the only hook manager; see `github-actions.md` for the `commit-msg` and `pre-push` jobs.
+Pyrefly runs project-wide on each commit; it is fast enough that checking only staged files is unnecessary. `--force-exclude` keeps Ruff's `exclude` (generated protobuf, migrations) in force for explicitly passed files. `lefthook` comes from the root `dev` group; `just setup` installs the hooks. See `github-actions.md` for the shared `commit-msg` and branch guard; the Python pre-push quality job runs the existing `just check` recipe. Existing repos keep their hook manager.
 
 ### `.github/workflows/ci.yml`
 
@@ -337,7 +356,7 @@ CMD ["uvicorn", "acme_api.main:app", "--host", "0.0.0.0"]
 - Dependency layers cache separately from source. Add each member's `pyproject.toml` bind mount as members grow.
 - Pin the uv image to the project's uv minor (or a digest), never `latest`.
 - `COPY . /app` needs a `.dockerignore` listing at least `.venv`, `.git`, `__pycache__`, and `.*_cache`. Otherwise the host `.venv` lands in the image.
-- The workspace installs as editable, so the venv points at `/app/src`; that works in this single-stage build. In a multi-stage build, add `--no-editable` to the final `uv sync` and copy only `.venv`.
+- The workspace installs as editable, so the venv points at the workspace members' source directories under `/app`; that works in this single-stage build. In a multi-stage build, add `--no-editable` to the final `uv sync` and copy only `.venv`.
 - `--host 0.0.0.0` is correct inside a container; the platform decides what is exposed.
 
 ### Applying to a repo
