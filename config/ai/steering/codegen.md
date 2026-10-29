@@ -19,3 +19,4 @@ tags:
 - Find and run the owning codegen command instead.
 - After codegen, inspect the generated diff and verify it is limited to expected outputs.
 - If an API schema changes, check downstream generated clients and freshness checks.
+- In TypeScript workspaces, keep generated files (such as `*.gen.ts`) in the oxlint and oxfmt ignore patterns. Run codegen before dependent build/typecheck scripts; use task dependencies when the repo already has Turbo or Nx. Do not add a runner solely for codegen.
