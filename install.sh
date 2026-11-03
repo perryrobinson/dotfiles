@@ -188,6 +188,11 @@ install_dev_tools() {
         bash "$DOTFILES_DIR/tools/setup_rust.sh"
     fi
 
+    # Install Android build toolchain (requires Java and Rust)
+    if confirm "Do you want to install the Android build toolchain (SDK, NDK, Rust targets)?"; then
+        bash "$DOTFILES_DIR/tools/setup_android.sh"
+    fi
+
     # Install Neovim with LazyVim
     if confirm "Do you want to install Neovim with LazyVim?"; then
         bash "$DOTFILES_DIR/tools/setup_nvim.sh"
@@ -207,6 +212,7 @@ else
     log_kv "Bun" "./tools/setup_bun.sh"
     log_kv "Go" "./tools/setup_golang.sh"
     log_kv "Rust" "./tools/setup_rust.sh"
+    log_kv "Android" "./tools/setup_android.sh"
     log_kv "Neovim" "./tools/setup_nvim.sh"
 fi
 
