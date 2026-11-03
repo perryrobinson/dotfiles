@@ -78,6 +78,11 @@ docker run --rm -e DOTFILES_CI=1 "${IMAGE_NAME}:installed" bash -c '
     check "pnpm runs"    pnpm --version
     check "pnpm is 11+"  bash -c "[ \"\$(pnpm --version | cut -d. -f1)\" -ge 11 ]"
 
+    echo "--- Android toolchain (offline checks only; SDK is not installed in CI) ---"
+    check "setup_android.sh parses"        bash -n ~/dotfiles/tools/setup_android.sh
+    check "android.sh sourced without SDK" bash -c "source ~/.tool_configs/android.sh"
+    check "ANDROID_HOME unset without SDK" bash -c "source ~/.tool_configs/android.sh; [ -z \"\${ANDROID_HOME:-}\" ]"
+
     echo "--- Node visible to subprocesses ---"
     check "node found by env"  env which node
     check "node works in bash -c" bash -c "node --version"
