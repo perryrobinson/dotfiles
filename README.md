@@ -43,6 +43,7 @@ During installation, you'll be prompted to choose between two installation metho
   - Bun: JavaScript runtime and toolkit (alternative to Node.js).
   - Go: Installs Go directly from the official website.
   - Rust: Uses rustup for toolchain management (rustc, cargo, clippy, rustfmt).
+  - Android: Installs the Android build toolchain for Tauri 2 / Gradle builds (cmdline-tools, platform, build-tools, NDK, Rust Android targets). Requires Java and Rust; no emulator.
   - Neovim: Builds from source with LazyVim configuration. See [top Neovim configs](https://dotfyle.com/neovim/configurations/top) for inspiration.
 - **AI Guidance**: Opinionated steering docs and a global AGENTS.md in `config/ai/` — copy into whichever AI coding tools you use.
 
@@ -80,9 +81,20 @@ source ~/.bashrc
 ./tools/setup_rust.sh
 source ~/.bashrc
 
+# For Android builds (requires Java and Rust; SDK goes to ~/Android/Sdk)
+./tools/setup_android.sh
+source ~/.bashrc
+
 # For Neovim with LazyVim
 ./tools/setup_nvim.sh
 source ~/.bashrc
+```
+
+The Android script installs only the build toolchain (no emulator or system images; run the emulator from Android Studio on the Windows host). You'll be asked to accept the SDK licenses interactively. Projects that pin their own Rust toolchain in `rust-toolchain.toml` won't see targets added to the default toolchain; add them there:
+
+```toml
+[toolchain]
+targets = ["aarch64-linux-android", "x86_64-linux-android"]
 ```
 
 ## How It Works
@@ -165,6 +177,7 @@ dotfiles/
 │   ├── bash_secrets.template   # Template for secrets
 │   ├── bash_logger             # Logging library for scripts
 │   └── tool_configs/           # Tool-specific configurations
+│       ├── android.sh          # Android SDK/NDK configuration
 │       ├── bun.sh              # Bun configuration
 │       ├── golang.sh           # Go configuration
 │       ├── java.sh             # SDKMAN configuration
@@ -190,6 +203,7 @@ dotfiles/
 ├── tools/                      # Setup scripts for development tools
 │   ├── common.sh               # Shared bootstrapping (sources bash_logger)
 │   ├── remove_nvim.sh          # Neovim uninstaller
+│   ├── setup_android.sh        # Installs Android SDK/NDK and Rust Android targets
 │   ├── setup_bun.sh            # Installs Bun
 │   ├── setup_git.sh            # Git config and SSH keys
 │   ├── setup_golang.sh         # Installs Go
