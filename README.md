@@ -90,7 +90,7 @@ source ~/.bashrc
 source ~/.bashrc
 ```
 
-The Android script installs only the build toolchain (no emulator or system images; run the emulator from Android Studio on the Windows host). You'll be asked to accept the SDK licenses interactively. Projects that pin their own Rust toolchain in `rust-toolchain.toml` won't see targets added to the default toolchain; add them there:
+The Android script installs only the build toolchain (no emulator or system images; run the emulator from Android Studio on the Windows host). Running it accepts the Android SDK licenses non-interactively. Projects that pin their own Rust toolchain in `rust-toolchain.toml` won't see targets added to the default toolchain; add them there:
 
 ```toml
 [toolchain]

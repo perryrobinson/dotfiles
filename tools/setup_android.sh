@@ -106,14 +106,18 @@ done
 
 if [ "${#MISSING[@]}" -gt 0 ]; then
     log_step 4 "Installing: ${MISSING[*]}"
-    # sdkmanager shows the license text and prompts on the terminal;
-    # licenses are deliberately NOT auto-accepted.
-    "$SDKMANAGER" --sdk_root="$ANDROID_HOME" "${MISSING[@]}"
+    # Accept the SDK licenses non-interactively so the script never hangs on a prompt.
+    # Running this script is taken as acceptance of the Android SDK License Agreement
+    # (https://developer.android.com/studio/terms); sdkmanager records it under $ANDROID_HOME/licenses.
+    # Process substitution (not a pipe) avoids a pipefail SIGPIPE from `yes`.
+    log_warn "Accepting Android SDK licenses (https://developer.android.com/studio/terms)"
+    "$SDKMANAGER" --sdk_root="$ANDROID_HOME" --licenses < <(yes) > /dev/null
+    "$SDKMANAGER" --sdk_root="$ANDROID_HOME" "${MISSING[@]}" < /dev/null
     # sdkmanager exits 0 when a license is declined, so confirm what landed
     INSTALLED="$("$SDKMANAGER" --sdk_root="$ANDROID_HOME" --list_installed 2>/dev/null || true)"
     for pkg in "${MISSING[@]}"; do
         grep -qE "^[[:space:]]*${pkg//./\\.}[[:space:]]*\|" <<< "$INSTALLED" \
-            || die "$pkg was not installed (licenses not accepted?). Re-run this script and accept the licenses."
+            || die "$pkg was not installed . Re-run this script."
     done
     log_success "SDK packages installed"
 else
