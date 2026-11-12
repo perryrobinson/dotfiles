@@ -161,7 +161,11 @@ ls -la  # Should show a backup file with timestamp
 - Add custom functions to `.bash_functions`
 - Modify PATH settings in `.bash_paths`
 - Modify AI guidance in `config/ai/AGENTS.md`, `config/ai/steering/`, and `config/ai/skills/`
-- Skill discovery locations: Codex and OpenCode use `~/.agents/skills/`; Claude Code uses `~/.claude/skills/`; Kiro uses `~/.kiro/skills/`. Installation is manual; `install.sh` does not manage AI guidance.
+- Install or update AI guidance and skills manually: `rtk uv run --no-project tools/install_ai.py`. Preview with `--dry-run`. Requires Python 3.10+ (via uv); no extra dependencies. `install.sh` does not invoke this installer.
+- The installer copies `config/ai/skills/` into `~/.agents/skills/` (Codex and OpenCode), `~/.claude/skills/`, and `~/.kiro/skills/`. It installs shared guidance into `~/.codex/AGENTS.md`, `~/.claude/CLAUDE.md`, `~/.config/opencode/AGENTS.md`, and `~/.kiro/steering/dotfiles.md`. `CODEX_HOME`, `CLAUDE_CONFIG_DIR`, and `XDG_CONFIG_HOME` are respected. Steering references point to this checkout, so keep it available. RTK instructions are expanded inline for portability.
+- Existing files and locally edited installed files are preserved and reported as conflicts (exit 1); other files still install. Unchanged managed files update on the next manual run. Nothing is pruned, and settings, credentials, plugins, and unrelated skills are untouched. Identical existing files remain unmanaged unless bootstrap adopts them. Destination symlink parents and relative config directory overrides are refused.
+- Optional initial migration: `rtk uv run --no-project tools/install_ai.py --bootstrap --dry-run`, then the same command without `--dry-run`. This backs up and replaces only conflicting destination paths, including old guidance; it never wipes whole tool directories. Backups and the ownership manifest live in `~/.local/state/dotfiles-ai/`. Bootstrap is allowed once per user state; preserve that directory. Normal updates never replace conflicts. Review the preview before using bootstrap.
+- Discovery references: [Codex skills](https://learn.chatgpt.com/docs/build-skills), [Claude skills](https://code.claude.com/docs/en/skills), [OpenCode skills](https://opencode.ai/docs/skills/), and [Kiro skills](https://kiro.dev/docs/cli/skills/). Older Kiro versions or custom agents may require their own resource configuration.
 - Store secrets and API keys in `.bash_secrets`
 
 ## Structure

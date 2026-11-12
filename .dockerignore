@@ -5,4 +5,5 @@ test/*
 .gitignore
 !test/verify-ai-steering.py
 !test/verify-justfiles-skill.py
+!test/verify-ai-installer.py
 !config/ai/**/*.md
