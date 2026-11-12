@@ -6,10 +6,10 @@ Worked cases for recipes that break quietly: they parse, pass `just --fmt --chec
 
 A recipe takes any number of paths and hands them to a tool.
 
-Bad: `{{ paths }}` pastes the arguments back joined by spaces, so `just probe "My Files/a.txt" b.txt` gives the tool three arguments: `My`, `Files/a.txt` and `b.txt`.
+Bad: `{{ paths }}` pastes the arguments back joined by spaces, so `just inspect-files "Sample Files/report.csv" totals.csv` gives the tool three arguments: `Sample`, `Files/report.csv` and `totals.csv`.
 
 ```just
-probe *paths:
+inspect-files *paths:
     tool inspect {{ paths }}
 ```
 
@@ -17,26 +17,26 @@ Good: `[positional-arguments]` passes each argument through as given, and `"$@"`
 
 ```just
 [positional-arguments]
-probe *paths:
+inspect-files *paths:
     tool inspect "$@"
 ```
 
 ## Running a command through another shell
 
-`ssh host cmd` and `docker exec box sh -c cmd` hand a command string to a second shell, on the other side, which parses it again.
+`ssh buildhost cmd` and `docker exec box sh -c cmd` hand a command string to a second shell, on the other side, which parses it again.
 
 Bad: the path is wrapped in single quotes inside double quotes. A path containing `'` ends the quoting early and the remote shell fails ("Unterminated quoted string"). A `$` or `"` is expanded by the local shell before the command even leaves.
 
 ```just
-remote-probe path:
-    ssh host "/opt/tools/probe '{{ path }}'"
+remote-inspect path:
+    ssh buildhost "/usr/local/bin/file-info '{{ path }}'"
 ```
 
 Good: quote once for each shell. The inner `quote()` makes the path safe for the remote shell, and the outer one gets that whole string past the local shell as one argument.
 
 ```just
-remote-probe path:
-    ssh host /opt/tools/probe {{ quote(quote(path)) }}
+remote-inspect path:
+    ssh buildhost /usr/local/bin/file-info {{ quote(quote(path)) }}
 ```
 
 ## A flag that's passed only sometimes
@@ -68,26 +68,26 @@ When the tool reads the choice from an environment variable, passing it once wit
 
 ## A toolchain's environment on every recipe
 
-Several recipes need the same environment, such as an SDK path.
+Several recipes need the same environment, such as a compiler installation.
 
-Bad: each recipe spells out `env SDK_HOME=... SDK_LIB=...`. A recipe added later without it picks up whatever the caller's shell has, and works on one machine only.
+Bad: each recipe spells out `env TOOL_ROOT=... TOOL_DATA=...`. A recipe added later without it picks up whatever the caller's shell has, and works on one machine only.
 
 ```just
-sdk_home := env("SDK_HOME", "/opt/sdk")
-sdk_lib := sdk_home / "lib"
+tool_root := env("TOOL_ROOT", "/opt/compiler")
+tool_data := tool_root / "share"
 
 build:
-    env SDK_HOME={{ sdk_home }} SDK_LIB={{ sdk_lib }} tool build
+    env TOOL_ROOT={{ tool_root }} TOOL_DATA={{ tool_data }} tool build
 
 test:
-    env SDK_HOME={{ sdk_home }} SDK_LIB={{ sdk_lib }} tool test
+    env TOOL_ROOT={{ tool_root }} TOOL_DATA={{ tool_data }} tool test
 ```
 
-Good: `export` the variables once, and every recipe line gets them. The caller's `SDK_HOME` wins through `env()`; `SDK_LIB` is derived from it. Use `env("SDK_LIB", SDK_HOME / "lib")` instead if that path also needs its own override.
+Good: `export` the variables once, and every recipe line gets them. The caller's `TOOL_ROOT` wins through `env()`; `TOOL_DATA` is derived from it. Use `env("TOOL_DATA", TOOL_ROOT / "share")` instead if that path also needs its own override.
 
 ```just
-export SDK_HOME := env("SDK_HOME", "/opt/sdk")
-export SDK_LIB := SDK_HOME / "lib"
+export TOOL_ROOT := env("TOOL_ROOT", "/opt/compiler")
+export TOOL_DATA := TOOL_ROOT / "share"
 
 build:
     tool build
@@ -98,78 +98,78 @@ test:
 
 ## A step that runs after another
 
-`setup` installs dependencies, then stages files that need them.
+`bootstrap` installs dependencies, then assembles files that need them.
 
-Bad: calling `just` from inside a recipe starts a separate `just` run. Command-line overrides are lost (`just mode=release setup` stages with the default `mode`), and the nested run reads the justfile again from scratch.
+Bad: calling `just` from inside a recipe starts a separate `just` run. Command-line overrides are lost (`just flavor=compact bootstrap` assembles with the default `flavor`), and the nested run reads the justfile again from scratch.
 
 ```just
-mode := "debug"
+flavor := "standard"
 
-setup:
+bootstrap:
     pnpm install
-    just stage
+    just assemble
 
-stage:
-    pnpm run stage --mode {{ mode }}
+assemble:
+    pnpm run assemble --flavor {{ flavor }}
 ```
 
 Good: a dependency after `&&` runs after the recipe's own lines, in the same `just` run, with the same overrides.
 
 ```just
-mode := "debug"
+flavor := "standard"
 
-setup: && stage
+bootstrap: && assemble
     pnpm install
 
-stage:
-    pnpm run stage --mode {{ mode }}
+assemble:
+    pnpm run assemble --flavor {{ flavor }}
 ```
 
 ## Working in a subdirectory
 
-A tool has to run inside `apps/web`.
+A tool has to run inside `packages/handbook`.
 
-Bad: every line repeats `cd apps/web &&`, and a line that forgets it runs in the root without any error.
+Bad: every line repeats `cd packages/handbook &&`, and a line that forgets it runs in the root without any error.
 
 ```just
-web-build:
-    cd apps/web && pnpm install
-    cd apps/web && pnpm build
+handbook-build:
+    cd packages/handbook && pnpm install
+    cd packages/handbook && pnpm build
 ```
 
-Good: `[working-directory]` covers every line. Paths on those lines are now relative to `apps/web`, so a file in the repo root becomes `../../file`, or `{{ justfile_directory() }}/file`.
+Good: `[working-directory]` covers every line. Paths on those lines are now relative to `packages/handbook`, so a file in the repo root becomes `../../file`, or `{{ justfile_directory() }}/file`.
 
 ```just
-[working-directory('apps/web')]
-web-build:
+[working-directory('packages/handbook')]
+handbook-build:
     pnpm install
     pnpm build
 ```
 
 ## A recipe for one OS
 
-A native package build needs macOS and Xcode.
+A system diagnostic needs the macOS version-reporting tool.
 
-Bad: on Linux the recipe is listed and runs, then fails partway with an unrelated error such as `xcodebuild: command not found`.
+Bad: on Linux the recipe is listed and runs, then fails partway with an unrelated error such as `sw_vers: command not found`.
 
 ```just
-native-build:
-    xcodebuild -scheme Package build
+system-info:
+    sw_vers
 ```
 
-Good: the real recipe exists only on macOS, and a same-named recipe on the other systems explains why it can't run. `just --list` shows one `native-build` on every system.
+Good: the real recipe exists only on macOS, and a same-named recipe on the other systems explains why it can't run. `just --list` shows one `system-info` on every system.
 
 ```just
-# Build the native package (macOS with Xcode).
+# Print macOS version information.
 [macos]
-native-build:
-    xcodebuild -scheme Package build
+system-info:
+    sw_vers
 
-[doc('Build the native package (macOS with Xcode).')]
+[doc('Print macOS version information.')]
 [linux]
 [windows]
-native-build:
-    @echo "native-build needs macOS with Xcode" >&2
+system-info:
+    @echo "system-info needs macOS" >&2
     @exit 1
 ```
 

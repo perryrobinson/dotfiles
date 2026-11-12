@@ -24,7 +24,7 @@ Learn the house style from the existing justfile's naming and grouping, and matc
 These rules decide whether a recipe does what it reads as doing:
 
 - **Working directory**: every recipe runs in the justfile's directory, wherever `just` was invoked from, so paths are relative to the justfile. `[working-directory('dir')]` runs a recipe in a subdirectory; `[no-cd]` runs it where the user invoked `just`.
-- **One shell per line**: each line of a normal recipe runs in a fresh shell, so a `cd`, a variable or an `export` lasts only for its own line. Chain dependent commands on one line (`cd web && pnpm build`), or make the recipe a script.
+- **One shell per line**: each line of a normal recipe runs in a fresh shell, so a `cd`, a variable or an `export` lasts only for its own line. Chain dependent commands on one line (`cd handbook && pnpm build`), or make the recipe a script.
 - **Scripts**: `[script('bash')]` (or a `#!/usr/bin/env bash` first line) runs the whole body as one script, so state carries between lines. Neither stops on a failing line by default, so start the body with `set -euo pipefail`. Bare `[script]` uses `sh -eu` and does stop.
 - **Failure**: a failing line stops a normal recipe and `just` exits with its code. Prefix a line with `-` to carry on past failure, `@` to run it without echoing it.
 - **Interpolation before the shell**: `{{ expr }}` is pasted into the text first, then the shell parses it, so a value with a space becomes two words. Wrap values in `{{ quote(x) }}` to keep them one argument, or set `[positional-arguments]` and use `"$1"` / `"$@"`. `{{{{` writes a literal `{{`.
@@ -38,15 +38,15 @@ Each bad version parses, passes `just --fmt --check` and looks fine in review. T
 
 ```just
 build:
-    cd web
+    cd handbook
     pnpm build
 ```
 
-Good: one line, or `[working-directory('web')]` when every line runs there.
+Good: one line, or `[working-directory('handbook')]` when every line runs there.
 
 ```just
 build:
-    cd web && pnpm build
+    cd handbook && pnpm build
 ```
 
 **A script without strict mode.** Bad: when lint fails, tests run anyway, and successful tests make `just` exit 0.
@@ -68,52 +68,52 @@ check:
     tool test
 ```
 
-**An unquoted argument.** Bad: `just save-image "output/home page.png"` exits 0, writes the image to `output/home`, and passes `page.png` to printf as an extra argument.
+**An unquoted argument.** Bad: `just write-report "reports/monthly summary.csv"` exits 0, writes the report to `reports/monthly`, and passes `summary.csv` to printf as an extra argument.
 
 ```just
-save-image file:
-    printf image > {{ file }}
+write-report file:
+    printf row > {{ file }}
 ```
 
 Good: `quote()` keeps the path one word.
 
 ```just
-save-image file:
-    printf image > {{ quote(file) }}
+write-report file:
+    printf row > {{ quote(file) }}
 ```
 
-**A doc comment over several lines.** Bad: `just --list` shows only the comment line directly above the recipe, here "so the Rust build can embed it."
+**A doc comment over several lines.** Bad: `just --list` shows only the comment line directly above the recipe, here "for the documentation server."
 
 ```just
-# Stage the web bundle into dist/,
-# so the Rust build can embed it.
-frontend:
-    pnpm run build:frontend
+# Generate reference pages in generated/,
+# for the documentation server.
+docs-build:
+    pnpm run docs:build
 ```
 
 Good: one line that stands on its own. Longer notes go in the docs, or in a comment separated from the recipe by a blank line.
 
 ```just
-# Stage the web bundle into dist/ for the Rust build to embed.
-frontend:
-    pnpm run build:frontend
+# Generate reference pages in generated/ for the documentation server.
+docs-build:
+    pnpm run docs:build
 ```
 
-**Comment banners as groups.** Bad: `just --list` ignores the banner as a group and shows it as the recipe's description: `desktop-run # ---- Desktop ----`.
+**Comment banners as groups.** Bad: `just --list` ignores the banner as a group and shows it as the recipe's description: `assets-build # ---- Assets ----`.
 
 ```just
-# ---- Desktop ----
-desktop-run:
-    pnpm run dev:desktop
+# ---- Assets ----
+assets-build:
+    tool assets
 ```
 
 Good: `[group]` is what `just --list` groups by, and the doc comment sits above the attributes.
 
 ```just
-# Build and start the desktop app.
-[group('desktop')]
-desktop-run:
-    pnpm run dev:desktop
+# Generate the shared assets.
+[group('assets')]
+assets-build:
+    tool assets
 ```
 
 **A recipe that only renames a command.** Usually unnecessary: one more name to learn, with nothing hidden or combined. A stable entry point used by hooks or CI is a reason to keep a one-command recipe.
@@ -177,7 +177,7 @@ prepare:
     mkdir -p {{ quote(out) }}
 ```
 
-Parameters: `name` (required), `name='default'`, `*rest` (zero or more), `+rest` (one or more). Required ones come first. A dependency can take arguments: `ci: (test "--locked")`. A dependency after `&&` runs after the recipe: `setup: && frontend`.
+Parameters: `name` (required), `name='default'`, `*rest` (zero or more), `+rest` (one or more). Required ones come first. A dependency can take arguments: `ci: (test "--locked")`. A dependency after `&&` runs after the recipe: `setup: && docs-build`.
 
 Calling: `just <recipe> <args>`, `just <module>::<recipe>`, `just -n` (dry run), `just --usage <recipe>` (arguments and their help), `just --groups`, `just --summary`, `just --dump`.
 

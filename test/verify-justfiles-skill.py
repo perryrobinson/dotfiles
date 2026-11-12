@@ -3,6 +3,7 @@
 import os
 import re
 import subprocess
+import sys
 import tempfile
 from pathlib import Path
 
@@ -36,7 +37,7 @@ def main():
             'if [[ "${FAIL_COMMAND:-}" == "${0##*/} $*" ]]; then exit 23; fi\n'
         )
         stub.chmod(0o755)
-        for tool in ["pnpm", "uv", "cargo", "tool", "ssh", "xcodebuild"]:
+        for tool in ["pnpm", "uv", "cargo", "tool", "ssh"]:
             (bin_dir / tool).symlink_to(stub)
         env = dict(os.environ, PATH=f"{bin_dir}:{os.environ['PATH']}")
         examples = {}
@@ -52,6 +53,62 @@ def main():
                 run(directory, "--list")
                 examples[file, index] = directory
 
+        # Renamed examples must retain their original execution/listing behavior.
+        pnpm = bin_dir / "pnpm"
+        pnpm.unlink()
+        pnpm.write_text("#!/bin/sh\npwd\n")
+        pnpm.chmod(0o755)
+        for index in [0, 1]:
+            directory = examples["SKILL.md", index]
+            (directory / "handbook").mkdir()
+            expected = directory if index == 0 else directory / "handbook"
+            assert run(directory, "build", env=env).strip() == str(expected)
+        for index in [10, 11]:
+            directory = examples["patterns.md", index]
+            (directory / "packages/handbook").mkdir(parents=True)
+            expected = str(directory / "packages/handbook")
+            assert run(directory, "handbook-build", env=env).splitlines() == [
+                expected,
+                expected,
+            ]
+        pnpm.unlink()
+        pnpm.symlink_to(stub)
+
+        assert "docs-build # for the documentation server." in run(
+            examples["SKILL.md", 6], "--list"
+        )
+        assert (
+            "Generate reference pages in generated/ for the documentation server."
+            in run(examples["SKILL.md", 7], "--list")
+        )
+        assert "[assets]" in run(examples["SKILL.md", 9], "--list")
+        for index in [0, 1]:
+            directory = examples["patterns.md", index]
+            output = run(
+                directory,
+                "inspect-files",
+                "Sample Files/report.csv",
+                "totals.csv",
+                env=dict(env, CALLS=str(directory / "calls")),
+            )
+            expected = (
+                "<Sample>\n<Files/report.csv>"
+                if index == 0
+                else "<Sample Files/report.csv>"
+            )
+            assert output == f"<inspect>\n{expected}\n<totals.csv>\n"
+        for index in [8, 9]:
+            directory = examples["patterns.md", index]
+            output = run(
+                directory,
+                "flavor=compact",
+                "bootstrap",
+                env=dict(env, CALLS=str(directory / "calls")),
+            )
+            assert output.endswith("<standard>\n" if index == 8 else "<compact>\n")
+        if sys.platform.startswith("linux"):
+            run(examples["patterns.md", 13], "system-info", status=1)
+
         # New script and path examples exercise their documented failure modes.
         for index in [2, 3]:
             directory = examples["SKILL.md", index]
@@ -64,11 +121,12 @@ def main():
             assert ("tool test" in (directory / "calls").read_text()) == (index == 2)
         for index in [4, 5]:
             directory = examples["SKILL.md", index]
-            (directory / "output").mkdir()
-            run(directory, "save-image", "output/home page.png")
+            (directory / "reports").mkdir()
+            run(directory, "write-report", "reports/monthly summary.csv")
             assert (
-                directory / ("output/home" if index == 4 else "output/home page.png")
-            ).read_text() == "image"
+                directory
+                / ("reports/monthly" if index == 4 else "reports/monthly summary.csv")
+            ).read_text() == "row"
 
         directory = examples["SKILL.md", 12]
         output = run(
@@ -80,10 +138,10 @@ def main():
         assert output == "<test>\n<path with spaces>\n"
 
         directory = examples["patterns.md", 3]
-        special = 'a\'b $HOME "quoted".txt'
+        special = 'a\'b $HOME "quoted".csv'
         output = run(
             directory,
-            "remote-probe",
+            "remote-inspect",
             special,
             env=dict(env, CALLS=str(directory / "calls")),
         )
@@ -108,12 +166,12 @@ def main():
         directory = examples["patterns.md", 7]
         tool = bin_dir / "tool"
         tool.unlink()
-        tool.write_text('#!/bin/sh\nprintf "<%s><%s>\\n" "$SDK_HOME" "$SDK_LIB"\n')
+        tool.write_text('#!/bin/sh\nprintf "<%s><%s>\\n" "$TOOL_ROOT" "$TOOL_DATA"\n')
         tool.chmod(0o755)
         for recipe in ["build", "test"]:
             assert (
-                run(directory, recipe, env=dict(env, SDK_HOME="/my sdk"))
-                == "</my sdk></my sdk/lib>\n"
+                run(directory, recipe, env=dict(env, TOOL_ROOT="/compiler files"))
+                == "</compiler files></compiler files/share>\n"
             )
 
         # The two complete workspace examples: setup order, isolated CI gates,
