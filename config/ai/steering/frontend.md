@@ -19,6 +19,8 @@ tags:
 
 # Frontend Steering
 
+- These DOM, SPA and CSS defaults apply to browser and WebView interfaces. For installed mobile apps and shared desktop/mobile interfaces, also read [mobile.md](mobile.md); do not apply browser tooling or dense desktop layouts blindly to native mobile screens.
+
 - Build the actual usable application experience first, not a marketing landing page, unless the user explicitly asks for a landing page.
 - For operational tools, prefer dense, calm, task-focused UI over decorative marketing composition.
 - Prefer SPA applications named or organized around `spa` unless the repo already has a different established frontend app shape.
