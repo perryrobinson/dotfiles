@@ -18,7 +18,7 @@ tags:
 
 # Polyglot Monorepo Steering
 
-This is the default scaffold for a repo that holds both TypeScript and Python. It has no Nx. `typescript.md` and `python.md` each describe a single-language repo with its own `lefthook.yml`, `ci.yml`, and `.gitignore`; applied side by side they collide. In a polyglot repo, take the per-language config files from those docs and use this doc for everything shared: the root manifests, `justfile`, `lefthook.yml`, `.gitignore`, and CI.
+This is the default scaffold for a repo that holds both TypeScript and Python. It has no Nx. `typescript.md` and `python.md` each describe a single-language repo with its own `lefthook.yml`, `ci.yml`, and `.gitignore`; applied side by side they collide. In a polyglot repo, take the per-language config files from those docs and use this doc for everything shared: the root manifests, `lefthook.yml`, `.gitignore`, and CI. Take the root justfile from the [justfiles skill](../skills/justfiles/SKILL.md).
 
 Move to Nx only when `monorepos.md` ("Nx or not") says the repo has outgrown this.
 
@@ -64,44 +64,9 @@ __pycache__
 .ruff_cache
 ```
 
-## `justfile`
+## Workspace commands
 
-`just` is the interface for people and agents. It calls the toolchains directly; it does not call Nx.
-
-```just
-default:
-    @just --list
-
-setup:
-    pnpm install
-    uv sync --locked
-
-fmt:
-    pnpm run format
-    uv run ruff format .
-    uv run ruff check --fix .
-
-check: check-ts check-py
-
-check-ts:
-    pnpm run check
-
-check-py:
-    uv run ruff format --check .
-    uv run ruff check .
-    uv run pyrefly check
-
-test: test-ts test-py
-
-test-ts:
-    pnpm run test
-
-test-py *args:
-    uv run pytest {{args}}
-
-```
-
-`just setup` is the one command after clone. `pnpm install` runs the root `prepare` script, which installs the git hooks, so no separate hook step exists.
+Use the [justfiles skill](../skills/justfiles/SKILL.md) and its [second toolchain case](../skills/justfiles/patterns.md#adding-a-second-toolchain) for the shared root recipes and language-specific CI entry points. This scaffold chooses native pnpm and uv workspaces; orchestration choices belong in `monorepos.md`.
 
 ## `lefthook.yml`
 
@@ -199,8 +164,9 @@ jobs:
       - uses: ./.github/actions/setup-toolchains
         with:
           node: "true"
-      - run: pnpm run check
-      - run: pnpm run test
+      - run: cargo install --locked just --version 1.59.0
+      - run: just check-ts
+      - run: just test-ts
 
   py:
     runs-on: ubuntu-latest
@@ -210,10 +176,9 @@ jobs:
       - uses: ./.github/actions/setup-toolchains
         with:
           python: "true"
-      - run: uv run ruff format --check .
-      - run: uv run ruff check .
-      - run: uv run pyrefly check
-      - run: uv run pytest
+      - run: cargo install --locked just --version 1.59.0
+      - run: just check-py
+      - run: just test-py
 
   ci:
     if: always()
@@ -227,6 +192,7 @@ jobs:
           test "$RESULTS" = "success success"
 ```
 
+- Ubuntu hosted runners provide Cargo for the installation above; other runner images must provision it or supply the same just binary. For version policy, see the justfiles skill.
 - Make `ci` the only required status check in branch protection. It passes only when both language jobs succeed; skipped, failed, or cancelled jobs fail the gate.
 - Run both toolchains even for docs-only PRs at this scale. Fixture and shared-config changes cannot silently skip tests.
 - `pnpm run check` builds dependency declarations before TypeScript and type-aware lint need them. The default test script also builds dependencies, so `just test` works independently.
@@ -243,4 +209,4 @@ jobs:
 
 ## Growing out of this scaffold
 
-Keep `just` as the interface. Add the optional Turbo setup from `typescript.md` when TypeScript caching saves meaningful time. Add Nx when cross-language dependencies, codegen ordering, or boundary enforcement need a project graph; see `monorepos.md`. More languages alone do not require a new runner. Preserve full CI coverage until any affected selection is verified against fixtures, shared configs, and downstream consumers.
+Add the optional Turbo setup from `typescript.md` when TypeScript caching saves meaningful time. Add Nx when cross-language dependencies, codegen ordering, or boundary enforcement need a project graph; see `monorepos.md`. More languages alone do not require a new runner. Preserve full CI coverage until any affected selection is verified against fixtures, shared configs, and downstream consumers.

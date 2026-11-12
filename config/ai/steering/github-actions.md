@@ -83,7 +83,7 @@ Pins only stay current if something updates them; see "Dependabot" below.
 The default in `polyglot-monorepo.md` uses one workflow with full TypeScript and Python jobs and one required gate. Run all checks/tests on every PR/push so fixture, asset, and shared-config changes are covered.
 
 - **Composite action `.github/actions/setup-toolchains`:** takes string inputs (`node`, `python`, default `"false"`) and installs only the toolchain each job requests, plus its locked dependencies. Add other language inputs only when needed. This removes repeated setup without inventing a project graph.
-- **Quality, test, integration, and codegen-drift jobs** run package scripts or the repo's existing runner. Codegen-drift jobs regenerate and fail on any diff. Keep `just` as the local interface; CI can invoke the underlying commands directly.
+- **Quality, test, integration, and codegen-drift jobs** run package scripts or the repo's existing runner. Codegen-drift jobs regenerate and fail on any diff. When a repo has justfiles, use the [justfiles skill](../skills/justfiles/SKILL.md) for shared gates and version policy; the Python and polyglot templates show the job wiring. Repos without justfiles keep their package-script interface.
 - **Affected selection is optional:** add it only when full runs are costly. Use the existing dependency graph when available, and cover all files owned by each project, downstream consumers, fixtures/assets, and shared configuration. Unknown inputs must run checks rather than skip them. Test selection against real changes before making it a required gate; extension-only filters are insufficient.
 - **Keep `push: main` validation** unless a merge queue or equivalent protection guarantees the merged result was tested. Publishing should consume verified outputs.
 
@@ -107,7 +107,7 @@ Configure `.github/dependabot.yml` for every ecosystem the repo uses (`github-ac
 
 ## Git hooks: Lefthook only
 
-Use Lefthook for every hook type; do not add the `pre-commit` framework to new repos. Lefthook runs the tools already in the repo (`pnpm oxlint`, `uv run ruff`) in parallel from one `lefthook.yml`, so TypeScript and Python jobs sit side by side in a polyglot repo. A repo that already uses `pre-commit` keeps it until migrated; do not run both.
+Use Lefthook for every hook type in new repos; do not add the `pre-commit` framework. Lefthook runs the tools already in the repo (`pnpm oxlint`, `uv run ruff`) from one `lefthook.yml`, so TypeScript and Python jobs sit side by side in a polyglot repo. Existing repos keep their hook manager until migrated; do not run two.
 
 Add these jobs next to the pre-commit jobs from `typescript.md` and `python.md`:
 
@@ -126,4 +126,4 @@ pre-push:
       run: pnpm run check
 ```
 
-`{1}` is the commit message file. The quality job above is for TypeScript; use `run: just check` in Python-only and polyglot repos, whose templates define that recipe. Do not reference `check-affected` unless the repo actually provides and verifies it. `lefthook install` registers all configured hooks; pnpm repos run it through `prepare`, while uv-only repos run `uv run lefthook install` through `just setup`. Verify pre-push from a normal shell on both a clean and deliberately broken feature branch. Keep the commit-msg regex in sync with the PR-title check.
+`{1}` is the commit message file. The quality job above is for TypeScript; use `run: just check` in Python-only and polyglot repos, using the recipes from the [justfiles skill](../skills/justfiles/SKILL.md). Do not reference `check-affected` unless the repo actually provides and verifies it. `lefthook install` registers all configured hooks; the language docs specify who installs Lefthook, and the skill owns the corresponding setup recipes. Verify pre-push from a normal shell on both a clean and deliberately broken feature branch. Keep the commit-msg regex in sync with the PR-title check.

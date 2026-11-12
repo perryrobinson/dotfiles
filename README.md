@@ -45,7 +45,7 @@ During installation, you'll be prompted to choose between two installation metho
   - Rust: Uses rustup for toolchain management (rustc, cargo, clippy, rustfmt).
   - Android: Installs the Android build toolchain for Tauri 2 / Gradle builds (cmdline-tools, platform, build-tools, NDK, Rust Android targets). Requires Java and Rust; no emulator.
   - Neovim: Builds from source with LazyVim configuration. See [top Neovim configs](https://dotfyle.com/neovim/configurations/top) for inspiration.
-- **AI Guidance**: Opinionated steering docs and a global AGENTS.md in `config/ai/` — copy into whichever AI coding tools you use.
+- **AI Guidance**: Opinionated steering docs, portable agent skills, and a global AGENTS.md in `config/ai/` — install manually into whichever AI coding tools you use. Skills follow `skills/<name>/SKILL.md`, with supporting references beside it; `config/ai/skills/justfiles/` owns justfile guidance.
 
 - **Docker Support**: Optional installation of Docker and Docker Compose
 
@@ -159,7 +159,8 @@ ls -la  # Should show a backup file with timestamp
 - Add your own aliases to `.bash_aliases`
 - Add custom functions to `.bash_functions`
 - Modify PATH settings in `.bash_paths`
-- Modify AI guidance in `config/ai/AGENTS.md` and `config/ai/steering/`
+- Modify AI guidance in `config/ai/AGENTS.md`, `config/ai/steering/`, and `config/ai/skills/`
+- Skill discovery locations: Codex and OpenCode use `~/.agents/skills/`; Claude Code uses `~/.claude/skills/`; Kiro uses `~/.kiro/skills/`. Installation is manual; `install.sh` does not manage AI guidance.
 - Store secrets and API keys in `.bash_secrets`
 
 ## Structure
@@ -187,9 +188,10 @@ dotfiles/
 │       └── rust.sh             # Rust/Cargo configuration
 ├── config/                     # Application configurations
 │   ├── nvim/                   # Neovim / LazyVim configuration
-│   ├── ai/                     # AI coding tool guidance (copy into tools as needed)
+│   ├── ai/                     # AI coding tool guidance (install into tools manually)
 │   │   ├── AGENTS.md           # Global AGENTS.md / CLAUDE.md template
-│   │   └── steering/           # Opinionated steering docs (language, toolchain, style)
+│   │   ├── steering/           # Opinionated steering docs (language, toolchain, style)
+│   │   └── skills/             # Portable skills: <name>/SKILL.md + references
 │   ├── tmux.conf               # Tmux configuration
 │   └── vscode/                 # VS Code settings
 │       ├── extensions.txt      # Recommended extensions
