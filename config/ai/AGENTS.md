@@ -26,12 +26,15 @@ Read these opinionated global steering docs only when the task touches the relev
 - Generated code: `~/dotfiles/config/ai/steering/codegen.md`
 - Docker on WSL: `~/dotfiles/config/ai/steering/docker-wsl.md`
 - Frontend application work: `~/dotfiles/config/ai/steering/frontend.md`
+- Mobile apps, shared desktop/mobile interfaces, Tauri, native plugins, device behavior and store releases: `~/dotfiles/config/ai/steering/mobile.md`
 
 Do not read every steering doc by default. Steering docs include frontmatter; use `applies_when` and `tags` as routing hints. Direct user instructions and repo-local AGENTS.md/CLAUDE.md files override these global docs.
 
 ## Skills
 
 For discovering repo commands through a justfile or adding, changing or reviewing recipes, read `~/dotfiles/config/ai/skills/justfiles/SKILL.md`. Its linked `patterns.md` owns the Python and polyglot justfile examples.
+
+For implementing or verifying Tauri apps across desktop, Android and iOS, read `~/dotfiles/config/ai/skills/tauri-mobile/SKILL.md`.
 
 ## Toolchains
 

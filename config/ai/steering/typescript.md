@@ -31,6 +31,7 @@ tags:
 # TypeScript Steering
 
 - Prefer `pnpm` and respect pnpm workspaces.
+- For mobile apps, also read [mobile.md](mobile.md). Keep framework-supported compiler versions and extend framework TypeScript configuration; the browser setup below is not a replacement for native framework configuration.
 - Prefer Vite and TanStack Router for browser SPAs unless the repository already uses another stack.
 - Check `.nvmrc`, `packageManager`, lockfiles, and workspace files before changing Node tooling.
 - Prefer strict TypeScript. Avoid `any`; model unknown data at boundaries and narrow it with validation.
@@ -41,6 +42,7 @@ tags:
 - Prefer Bulletproof React-style feature organization for React apps: app providers/routing at the top, feature modules for product behavior, shared components/utilities for reusable primitives, and API clients isolated from UI components. Scale the structure to the app; a small SPA does not need every layer.
 - Use TanStack Router for route structure and route-level data boundaries when building SPAs.
 - Use TanStack Query for server-state fetching, caching, mutations, retries, and invalidation. Do not replace it with ad hoc `useEffect` fetch flows.
+- Do not introduce TanStack Query solely for local state or native commands; mobile lifecycle and local-operation defaults live in [mobile.md](mobile.md).
 - Use Zod for runtime validation at external boundaries such as API responses, forms, URL/search params, environment/config, and local storage.
 - Keep form, API, and domain DTO types explicit. Avoid letting component props become the only data model. Derive types from the Zod schema (`z.infer`) instead of hand-writing a parallel interface for the same shape.
 - Prefer modern CSS for new styling work unless the repo already uses a specific styling system.

@@ -28,6 +28,7 @@ tags:
 - For CI workflows, lint them with `actionlint` and run any non-trivial shell logic locally against real commits. For git hooks and task-runner filters, exercise them in a scratch repo with a deliberately broken change; a config that parses is not evidence that it blocks or selects what it should.
 - When fixing a bug, prefer adding or updating a regression test that fails before the fix and passes after it when practical.
 - Verify the actual user-facing path when the change affects UI, API behavior, CLI behavior, Docker startup, or generated artifacts.
+- For installed mobile apps, follow [mobile.md](mobile.md) and the [tauri-mobile skill](../skills/tauri-mobile/SKILL.md) when using Tauri; browser-only checks do not verify native behavior.
 - If full verification is expensive or blocked, run the closest focused check and clearly state what did and did not run.
 - Report verification with command names and outcomes, not vague statements.
 - Do not claim work is complete without fresh verification evidence from this machine.
