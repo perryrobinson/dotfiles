@@ -33,6 +33,8 @@ def payload(home):
     codex = Path(os.environ.get("CODEX_HOME") or home / ".codex")
     claude = Path(os.environ.get("CLAUDE_CONFIG_DIR") or home / ".claude")
     opencode = Path(os.environ.get("XDG_CONFIG_HOME") or home / ".config") / "opencode"
+    if not all(path.is_absolute() for path in (codex, claude, opencode)):
+        raise ValueError("Config directory overrides must be absolute paths.")
     guidance = (
         (source / "AGENTS.md")
         .read_text()
@@ -87,6 +89,8 @@ def install(home, dry_run=False, bootstrap=False):
         )
         key = str(path)
         if current == data:
+            if bootstrap and not dry_run:
+                managed[key] = digest(data)
             if managed.get(key) == digest(data):
                 print(f"UNCHANGED {path}")
             else:

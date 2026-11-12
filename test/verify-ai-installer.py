@@ -69,6 +69,35 @@ def main():
         assert outside.read_text() == "keep"
         assert str(repo / "config/ai/steering") in guidance.read_text()
         assert "@RTK.md" not in guidance.read_text()
+
+        fresh = scratch / "fresh"
+        identical = fresh / ".agents/skills/justfiles/patterns.md"
+        identical.parent.mkdir(parents=True)
+        identical.write_bytes(source.read_bytes())
+        assert installer.install(fresh, bootstrap=True) == 0
+        source.write_text("next update")
+        assert installer.install(fresh) == 0
+        assert identical.read_text() == "next update"
+
+        for variable in ("CODEX_HOME", "CLAUDE_CONFIG_DIR", "XDG_CONFIG_HOME"):
+            with patch.dict(os.environ, {variable: "relative"}):
+                try:
+                    installer.install(scratch / "invalid", bootstrap=True)
+                except ValueError as error:
+                    assert "absolute" in str(error)
+                else:
+                    raise AssertionError("relative overrides must be rejected")
+        assert not (scratch / "invalid").exists()
+
+        with patch.dict(os.environ, {"CODEX_HOME": str(scratch / "codex")}):
+            assert installer.install(fresh) == 0
+            assert (scratch / "codex/AGENTS.md").exists()
+
+        script = repo / "config/ai/skills/justfiles/run.sh"
+        script.write_text("#!/bin/sh\nexit 0\n")
+        script.chmod(0o755)
+        assert installer.install(fresh) == 0
+        assert (fresh / ".agents/skills/justfiles/run.sh").stat().st_mode & 0o111
         print("Installer checks passed.")
 
 
