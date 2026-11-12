@@ -35,7 +35,7 @@ tags:
 - Check `.nvmrc`, `packageManager`, lockfiles, and workspace files before changing Node tooling.
 - Prefer strict TypeScript. Avoid `any`; model unknown data at boundaries and narrow it with validation.
 - Use the oxc toolchain: oxlint for linting and oxfmt for formatting. In an existing repo on other tools (Biome, ESLint, Prettier), keep them unless asked to migrate.
-- Lefthook is the only git hook manager. See `github-actions.md` for the `commit-msg` and `pre-push` jobs.
+- Use Lefthook for new repos; existing repos keep their hook manager. See `github-actions.md` for the `commit-msg` and `pre-push` jobs.
 - Use TypeScript 7 or newer (`typescript@^7`) for new and migrated workspaces. `tsc` is the native compiler. Do not add `@typescript/native-preview` or `tsgo`, which it replaced. `oxlint-tsgolint` is built on typescript-go, so type-aware lint and `tsc` must agree on one set of semantics. A repo stuck on TypeScript 5 or 6 (for example because a tool still needs the JS compiler API) keeps it and records the reason in the repo.
 - Prefer workspace filters such as `pnpm --filter <package> ...` for package-specific work.
 - Prefer Bulletproof React-style feature organization for React apps: app providers/routing at the top, feature modules for product behavior, shared components/utilities for reusable primitives, and API clients isolated from UI components. Scale the structure to the app; a small SPA does not need every layer.

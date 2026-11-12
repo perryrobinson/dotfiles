@@ -10,9 +10,9 @@ import re
 import runpy
 import subprocess
 import tempfile
+import tomllib
 from pathlib import Path
 
-import tomllib
 from fastapi.testclient import TestClient
 
 ROOT = Path(__file__).resolve().parents[1] / "config/ai/steering"
@@ -75,12 +75,11 @@ def main() -> None:
             "from pydantic import BaseModel\n\n\nclass Payload(BaseModel):\n    day: date\n"
         )
         subprocess.run(
-            ["rtk", "ruff", "check", "--config", str(config), str(route), str(model)],
+            ["ruff", "check", "--config", str(config), str(route), str(model)],
             check=True,
         )
         subprocess.run(
             [
-                "rtk",
                 "ruff",
                 "format",
                 "--check",

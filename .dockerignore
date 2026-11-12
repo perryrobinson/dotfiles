@@ -1,5 +1,8 @@
 .git
-test
+test/*
 .dockerignore
 *.md
 .gitignore
+!test/verify-ai-steering.py
+!test/verify-justfiles-skill.py
+!config/ai/**/*.md

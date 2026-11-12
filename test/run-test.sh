@@ -87,6 +87,11 @@ docker run --rm -e DOTFILES_CI=1 "${IMAGE_NAME}:installed" bash -c '
     check "node found by env"  env which node
     check "node works in bash -c" bash -c "node --version"
 
+    echo "--- AI guidance verification ---"
+    cd ~/dotfiles
+    uv run --no-project test/verify-ai-steering.py
+    uv run --no-project test/verify-justfiles-skill.py
+
     if [ "$FAIL" -ne 0 ]; then
         echo "SMOKE TESTS FAILED"
         exit 1

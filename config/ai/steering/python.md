@@ -45,7 +45,7 @@ tags:
 
 ## Standard Setup
 
-Default setup for new multi-package Python projects: a uv workspace with a virtual root, `src` layout members, Ruff, Pyrefly (strict), pytest, and `just` as the front door. Adapt these files to the project, including the Python version, package names, and the `search-path` and `known-first-party` lists. A single-package project uses the same files without the workspace tables. An existing repo keeps its own tools; add the missing pieces around them.
+Default setup for new multi-package Python projects: a uv workspace with a virtual root, `src` layout members, Ruff, Pyrefly (strict), pytest, and the command interface from the [justfiles skill](../skills/justfiles/SKILL.md). Adapt these files to the project, including the Python version, package names, and the `search-path` and `known-first-party` lists. A single-package project uses the same files without the workspace tables. An existing repo keeps its own tools; add the missing pieces around them.
 
 Every check exits non-zero on any finding, because agents read exit codes. Ruff and Pyrefly have no warning tier here; everything selected is an error.
 
@@ -203,32 +203,9 @@ build-backend = "uv_build"
 
 `uv_build` expects `src/<name_with_underscores>/__init__.py`. Keep the `uv_build` range on the same minor as the uv in use (`uv --version`) and bump both together. Add an empty `py.typed` to library packages. Dev tooling stays in the root `dev` group; a member's runtime dependencies stay in that member's `dependencies`.
 
-### `justfile` (root)
+### Workspace commands
 
-```just
-default:
-    @just --list
-
-sync:
-    uv sync --locked
-
-setup: sync
-    uv run lefthook install
-
-fmt:
-    uv run ruff format .
-    uv run ruff check --fix .
-
-check:
-    uv run ruff format --check .
-    uv run ruff check .
-    uv run pyrefly check
-
-test *args:
-    uv run pytest {{args}}
-```
-
-`just setup` installs the environment and the git hooks; run it once per clone. `just check` is the single gate for formatting, lint, and types; `just test` runs pytest, and takes extra arguments (`just test -k name apps/api`).
+Use the [justfiles skill](../skills/justfiles/SKILL.md) and its [Python workspace case](../skills/justfiles/patterns.md#a-python-workspace-front-door) for the root recipes, argument handling and setup/check/test behavior. The language tools and their configuration stay in this doc.
 
 ### uv commands
 
@@ -237,7 +214,7 @@ uv init --bare                              # start a root pyproject.toml, then 
 uv init --lib --vcs none --name acme-common packages/common # new library member (src layout, uv_build, py.typed)
 uv init --package --vcs none --name acme-api apps/api # new application member (src layout; --app alone makes a flat layout)
 uv sync                                     # install every member + dev group; updates uv.lock
-uv sync --locked                            # fail if uv.lock is stale (CI, just sync)
+uv sync --locked                            # fail if uv.lock is stale (CI)
 uv lock --check                             # verify the lockfile without installing
 uv add --package acme-api httpx             # add a runtime dependency to ONE member
 uv add --package acme-api acme-common       # add a workspace member as a dependency
@@ -263,21 +240,16 @@ Drop `[tool.uv.workspace]`, `[tool.uv.sources]`, and `package = false`; add `[bu
 
 ```yaml
 pre-commit:
-  parallel: true
   jobs:
     - name: format
       glob: "*.py"
       run: uv run ruff format --force-exclude {staged_files}
       stage_fixed: true
-    - name: lint
-      glob: "*.py"
-      run: uv run ruff check --force-exclude {staged_files}
-    - name: typecheck
-      glob: "*.py"
-      run: uv run pyrefly check
+    - name: checks
+      run: just check
 ```
 
-Pyrefly runs project-wide on each commit; it is fast enough that checking only staged files is unnecessary. `--force-exclude` keeps Ruff's `exclude` (generated protobuf, migrations) in force for explicitly passed files. `lefthook` comes from the root `dev` group; `just setup` installs the hooks. See `github-actions.md` for the shared `commit-msg` and branch guard; the Python pre-push quality job runs the existing `just check` recipe. Existing repos keep their hook manager.
+Format staged Python files first, then run the complete quality gate so fixture and shared-config changes are covered too. `--force-exclude` keeps Ruff's `exclude` (generated protobuf, migrations) in force for explicitly passed files. Lefthook comes from the root `dev` group. See the skill's setup recipe and `github-actions.md` for the shared `commit-msg` and branch guard. Existing repos keep their hook manager.
 
 ### `.github/workflows/ci.yml`
 
@@ -306,12 +278,9 @@ jobs:
         with:
           enable-cache: true
       - run: uv sync --locked
-      - name: Format check
-        run: uv run ruff format --check .
-      - name: Lint
-        run: uv run ruff check .
-      - name: Type check
-        run: uv run pyrefly check
+      - run: cargo install --locked just --version 1.59.0
+      - name: Quality gate
+        run: just check
 
   test:
     needs: check
@@ -323,10 +292,11 @@ jobs:
         with:
           enable-cache: true
       - run: uv sync --locked
-      - run: uv run pytest
+      - run: cargo install --locked just --version 1.59.0
+      - run: just test
 ```
 
-Every action is pinned to a full commit SHA, per `github-actions.md`. Separate steps make a failure name its cause (format, lint, or types). `test` waits on `check` so broken code never burns test minutes.
+Every action is pinned to a full commit SHA, per `github-actions.md`. The quality recipe reports the failing tool (format, lint, or types). Ubuntu hosted runners provide Cargo for the pinned installation; other runner images must provision it or supply the same just binary. `test` waits on `check` so broken code never burns test minutes.
 
 ### Docker
 

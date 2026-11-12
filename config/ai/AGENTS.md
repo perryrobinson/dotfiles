@@ -14,7 +14,7 @@
 
 Read these opinionated global steering docs only when the task touches the relevant area:
 
-- Monorepos, Nx, and `just`: `~/dotfiles/config/ai/steering/monorepos.md`
+- Monorepos, Nx, and workspace orchestration: `~/dotfiles/config/ai/steering/monorepos.md`
 - Repos with both pnpm TypeScript and uv Python (default scaffold, hooks, CI): `~/dotfiles/config/ai/steering/polyglot-monorepo.md`
 - TypeScript, pnpm, oxlint, oxfmt, optional Turborepo, Vite, and TanStack: `~/dotfiles/config/ai/steering/typescript.md`
 - Python, uv workspaces, Ruff, Pyrefly, and pytest: `~/dotfiles/config/ai/steering/python.md`
@@ -28,6 +28,10 @@ Read these opinionated global steering docs only when the task touches the relev
 - Frontend application work: `~/dotfiles/config/ai/steering/frontend.md`
 
 Do not read every steering doc by default. Steering docs include frontmatter; use `applies_when` and `tags` as routing hints. Direct user instructions and repo-local AGENTS.md/CLAUDE.md files override these global docs.
+
+## Skills
+
+For discovering repo commands through a justfile or adding, changing or reviewing recipes, read `~/dotfiles/config/ai/skills/justfiles/SKILL.md`. Its linked `patterns.md` owns the Python and polyglot justfile examples.
 
 ## Toolchains
 
