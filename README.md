@@ -124,6 +124,7 @@ This builds a fresh Ubuntu container, runs the full installation with `DOTFILES_
 - All tools are on PATH (`node`, `npm`, `java`, `python3`, `go`, `rustc`, `bun`, `nvim`, `pnpm`)
 - All tools execute successfully (version checks)
 - Node.js is visible to subprocesses (`env which node`, `bash -c "node --version"`)
+- AI steering templates and justfile skill examples pass their verification scripts (using just 1.59.0)
 
 ### CI
 

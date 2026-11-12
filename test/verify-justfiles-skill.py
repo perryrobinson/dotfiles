@@ -11,7 +11,7 @@ SKILL = Path(__file__).resolve().parents[1] / "config/ai/skills/justfiles"
 
 def run(directory, *args, env=None, status=0):
     result = subprocess.run(
-        ["rtk", "proxy", "just", *args],
+        ["just", *args],
         cwd=directory,
         env=env,
         capture_output=True,
@@ -89,7 +89,7 @@ def main():
         )
         quoted = output.splitlines()[-1][1:-1]
         remote = subprocess.run(
-            ["rtk", "proxy", "sh", "-c", 'printf "<%s>\\n" ' + quoted],
+            ["sh", "-c", 'printf "<%s>\\n" ' + quoted],
             capture_output=True,
             text=True,
             check=True,
